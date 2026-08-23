@@ -25,10 +25,19 @@ router.put("/", requireAuth, async (req, res) => {
       });
     } else {
       const initialSchedule = {
-        mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [],
+        mon: [],
+        tue: [],
+        wed: [],
+        thu: [],
+        fri: [],
+        sat: [],
+        sun: [],
       };
       initialSchedule[day] = [entry];
-      workoutSchedule = new Workouts({ user: userId, schedule: initialSchedule });
+      workoutSchedule = new Workouts({
+        user: userId,
+        schedule: initialSchedule,
+      });
       await workoutSchedule.save();
       return res.status(201).json({
         message: "User workout schedule created and workout added.",
@@ -36,7 +45,9 @@ router.put("/", requireAuth, async (req, res) => {
       });
     }
   } catch (error) {
-    res.status(500).json({ message: "Error processing request.", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error processing request.", error: error.message });
   }
 });
 
@@ -50,19 +61,25 @@ router.patch("/", requireAuth, async (req, res) => {
     const { day, exerciseEntryId, updates } = req.body;
 
     if (!day || !exerciseEntryId || !updates) {
-      return res.status(400).json({ message: "Missing day, exerciseEntryId, or updates." });
+      return res
+        .status(400)
+        .json({ message: "Missing day, exerciseEntryId, or updates." });
     }
 
     const workoutSchedule = await Workouts.findOne({ user: userId });
     if (!workoutSchedule) {
-      return res.status(404).json({ message: "No schedule found for this user." });
+      return res
+        .status(404)
+        .json({ message: "No schedule found for this user." });
     }
 
     const entry = (workoutSchedule.schedule[day] || []).find(
       (ex) => ex._id.toString() === exerciseEntryId,
     );
     if (!entry || entry.removedOn) {
-      return res.status(404).json({ message: "Exercise not found in that day's schedule." });
+      return res
+        .status(404)
+        .json({ message: "Exercise not found in that day's schedule." });
     }
 
     const now = new Date();
@@ -90,7 +107,9 @@ router.patch("/", requireAuth, async (req, res) => {
       schedule: activeScheduleOnly(workoutSchedule.toObject().schedule),
     });
   } catch (error) {
-    res.status(500).json({ message: "Error updating exercise.", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error updating exercise.", error: error.message });
   }
 });
 
@@ -100,19 +119,25 @@ router.delete("/", requireAuth, async (req, res) => {
     const { day, exerciseEntryId } = req.body;
 
     if (!day || !exerciseEntryId) {
-      return res.status(400).json({ message: "Missing day or exerciseEntryId." });
+      return res
+        .status(400)
+        .json({ message: "Missing day or exerciseEntryId." });
     }
 
     const workoutSchedule = await Workouts.findOne({ user: userId });
     if (!workoutSchedule) {
-      return res.status(404).json({ message: "No schedule found for this user." });
+      return res
+        .status(404)
+        .json({ message: "No schedule found for this user." });
     }
 
     const entry = (workoutSchedule.schedule[day] || []).find(
       (exercise) => exercise._id.toString() === exerciseEntryId,
     );
     if (!entry) {
-      return res.status(404).json({ message: "Exercise not found in that day's schedule." });
+      return res
+        .status(404)
+        .json({ message: "Exercise not found in that day's schedule." });
     }
 
     // Soft delete — the entry stays as a tombstone so past dates still
@@ -127,7 +152,9 @@ router.delete("/", requireAuth, async (req, res) => {
       schedule: activeScheduleOnly(workoutSchedule.toObject().schedule),
     });
   } catch (error) {
-    res.status(500).json({ message: "Error removing exercise.", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error removing exercise.", error: error.message });
   }
 });
 

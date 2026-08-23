@@ -33,7 +33,10 @@ router.get("/", requireAuth, async (req, res) => {
     ]);
 
     const entries = (logDoc?.exercises_done || [])
-      .map((entry) => ({ ...entry, parsedDate: dayjs(entry.date, DATE_FORMAT, true) }))
+      .map((entry) => ({
+        ...entry,
+        parsedDate: dayjs(entry.date, DATE_FORMAT, true),
+      }))
       .filter((entry) => entry.parsedDate.isValid())
       .sort((a, b) => a.parsedDate.valueOf() - b.parsedDate.valueOf());
 
@@ -75,7 +78,9 @@ router.get("/", requireAuth, async (req, res) => {
         const sets = ex.setsCompleted || [];
         totalReps += sets.reduce((sum, s) => sum + (s.repsCompleted || 0), 0);
         if (sets.length === 0) continue;
-        const allTargetsMet = sets.every((s) => s.repsCompleted >= s.targetReps);
+        const allTargetsMet = sets.every(
+          (s) => s.repsCompleted >= s.targetReps,
+        );
         if (allTargetsMet) completedCount++;
         else partialCount++;
       }
@@ -110,7 +115,10 @@ router.get("/", requireAuth, async (req, res) => {
     let runStreak = 0;
     let prevDate = null;
     for (const entry of entries) {
-      runStreak = prevDate && entry.parsedDate.diff(prevDate, "day") === 1 ? runStreak + 1 : 1;
+      runStreak =
+        prevDate && entry.parsedDate.diff(prevDate, "day") === 1
+          ? runStreak + 1
+          : 1;
       longestStreak = Math.max(longestStreak, runStreak);
       prevDate = entry.parsedDate;
     }
@@ -121,7 +129,9 @@ router.get("/", requireAuth, async (req, res) => {
       const list = workoutDoc?.schedule?.[dayKey] || [];
       return list.filter((ex) => isActiveOn(ex, dayObj)).length;
     };
-    const completedByDate = new Map(perEntryStats.map((s) => [s.date, s.completedCount]));
+    const completedByDate = new Map(
+      perEntryStats.map((s) => [s.date, s.completedCount]),
+    );
 
     const currentWeekStart = weekReference.startOf("week");
     const weekDays = [];
@@ -157,8 +167,14 @@ router.get("/", requireAuth, async (req, res) => {
       (s) => !dayjs(s.date, DATE_FORMAT, true).isBefore(rangeCutoff, "day"),
     );
 
-    const totalCompleted = statsInRange.reduce((sum, s) => sum + s.completedCount, 0);
-    const totalPartial = statsInRange.reduce((sum, s) => sum + s.partialCount, 0);
+    const totalCompleted = statsInRange.reduce(
+      (sum, s) => sum + s.completedCount,
+      0,
+    );
+    const totalPartial = statsInRange.reduce(
+      (sum, s) => sum + s.partialCount,
+      0,
+    );
     const completionRate =
       totalCompleted + totalPartial > 0
         ? Math.round((totalCompleted / (totalCompleted + totalPartial)) * 100)
@@ -172,7 +188,9 @@ router.get("/", requireAuth, async (req, res) => {
     const catalog = await ExerciseDB.find({ id: { $in: [...idsInRange] } })
       .select("id bodyPart")
       .lean();
-    const bodyPartById = Object.fromEntries(catalog.map((e) => [e.id, e.bodyPart]));
+    const bodyPartById = Object.fromEntries(
+      catalog.map((e) => [e.id, e.bodyPart]),
+    );
 
     const muscleGroupTotals = {};
     for (const entry of entriesInRange) {
@@ -182,7 +200,8 @@ router.get("/", requireAuth, async (req, res) => {
           (s) => s.repsCompleted > 0,
         ).length;
         if (setCount === 0) continue;
-        muscleGroupTotals[bodyPart] = (muscleGroupTotals[bodyPart] || 0) + setCount;
+        muscleGroupTotals[bodyPart] =
+          (muscleGroupTotals[bodyPart] || 0) + setCount;
       }
     }
     const muscleGroups = Object.entries(muscleGroupTotals)
@@ -241,7 +260,12 @@ router.get("/", requireAuth, async (req, res) => {
       prCount,
     });
   } catch (error) {
-    res.status(500).json({ message: "Error computing progress stats.", error: error.message });
+    res
+      .status(500)
+      .json({
+        message: "Error computing progress stats.",
+        error: error.message,
+      });
   }
 });
 

@@ -51,7 +51,9 @@ router.get("/bodyPart", async (req, res) => {
     const bodyParts = await ExerciseDB.distinct("bodyPart");
     return res.json(bodyParts);
   } catch (error) {
-    res.status(500).json({ message: "Error in fetching exercises by body part", error });
+    res
+      .status(500)
+      .json({ message: "Error in fetching exercises by body part", error });
   }
 });
 
@@ -65,7 +67,9 @@ router.get("/equipment", async (req, res) => {
     const exercises = await ExerciseDB.find({ equipment }).limit(5);
     return res.json(exercises);
   } catch (error) {
-    res.status(500).json({ message: "Error in fetching equipment exercises", error });
+    res
+      .status(500)
+      .json({ message: "Error in fetching equipment exercises", error });
   }
 });
 
@@ -79,7 +83,12 @@ router.get("/target", async (req, res) => {
     const exercises = await ExerciseDB.find({ target }).limit(5);
     return res.json(exercises);
   } catch (error) {
-    res.status(500).json({ message: "Error in fetching exercises for target muscle.", error });
+    res
+      .status(500)
+      .json({
+        message: "Error in fetching exercises for target muscle.",
+        error,
+      });
   }
 });
 

@@ -35,4 +35,5 @@ const WorkoutScheduleSchema = new Schema(
   { timestamps: true },
 );
 
-export const Workouts = models.Workouts || model("Workouts", WorkoutScheduleSchema);
+export const Workouts =
+  models.Workouts || model("Workouts", WorkoutScheduleSchema);

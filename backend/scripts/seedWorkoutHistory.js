@@ -42,7 +42,9 @@ const run = async () => {
 
   const workoutDoc = await Workouts.findOne({ user: user._id });
   if (!workoutDoc) {
-    console.error("That user has no workout schedule yet — add some exercises first.");
+    console.error(
+      "That user has no workout schedule yet — add some exercises first.",
+    );
     process.exit(1);
   }
 
@@ -81,7 +83,9 @@ const run = async () => {
     if (date.isAfter(today, "day")) break;
 
     const dayKey = DAY_KEYS[date.day()];
-    const scheduled = (workoutDoc.schedule[dayKey] || []).filter((ex) => !ex.removedOn);
+    const scheduled = (workoutDoc.schedule[dayKey] || []).filter(
+      (ex) => !ex.removedOn,
+    );
     if (scheduled.length === 0) continue;
     if (Math.random() < skipRate) continue; // realistic gaps, so streaks vary
 
@@ -120,7 +124,9 @@ const run = async () => {
 
   await logDoc.save();
 
-  console.log(`Backdated ${backdated} schedule entries to ${startDate.format(DATE_FORMAT)}.`);
+  console.log(
+    `Backdated ${backdated} schedule entries to ${startDate.format(DATE_FORMAT)}.`,
+  );
   console.log(`Created ${created} logged days across ${weeks} weeks.`);
   await mongoose.disconnect();
 };

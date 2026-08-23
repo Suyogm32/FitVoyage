@@ -17,7 +17,9 @@ router.get("/", requireAuth, async (req, res) => {
     }
     res.json(user);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching profile.", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error fetching profile.", error: error.message });
   }
 });
 
@@ -26,7 +28,9 @@ router.patch("/", requireAuth, async (req, res) => {
     const { preferredWeightUnit } = req.body;
 
     if (preferredWeightUnit && !["kg", "lb"].includes(preferredWeightUnit)) {
-      return res.status(400).json({ message: "preferredWeightUnit must be 'kg' or 'lb'." });
+      return res
+        .status(400)
+        .json({ message: "preferredWeightUnit must be 'kg' or 'lb'." });
     }
 
     const user = await User.findByIdAndUpdate(
@@ -37,7 +41,9 @@ router.patch("/", requireAuth, async (req, res) => {
 
     res.json(user);
   } catch (error) {
-    res.status(500).json({ message: "Error updating profile.", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error updating profile.", error: error.message });
   }
 });
 

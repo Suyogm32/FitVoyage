@@ -2,7 +2,8 @@ const LB_TO_KG = 0.45359237;
 
 // Users pick kg or lb per exercise, so every comparison must happen in one
 // canonical unit or "100 lb" would beat "50 kg".
-export const toKg = (weight, unit) => (unit === "lb" ? weight * LB_TO_KG : weight);
+export const toKg = (weight, unit) =>
+  unit === "lb" ? weight * LB_TO_KG : weight;
 
 // Epley. Reasonable up to ~10 reps; drifts optimistic beyond that.
 export const estimateOneRepMax = (weightKg, reps) => {
@@ -39,20 +40,32 @@ export const detectPersonalRecords = (entries) => {
         if (record.seen) {
           if (weightKg > record.weightKg) {
             events.push({
-              exercise_ID: id, type: "weight", date: entry.date,
-              value: weightKg, previous: record.weightKg, reps,
+              exercise_ID: id,
+              type: "weight",
+              date: entry.date,
+              value: weightKg,
+              previous: record.weightKg,
+              reps,
             });
           }
           if (oneRepMax > record.oneRepMax) {
             events.push({
-              exercise_ID: id, type: "oneRepMax", date: entry.date,
-              value: oneRepMax, previous: record.oneRepMax, reps,
+              exercise_ID: id,
+              type: "oneRepMax",
+              date: entry.date,
+              value: oneRepMax,
+              previous: record.oneRepMax,
+              reps,
             });
           }
           if (reps > record.reps) {
             events.push({
-              exercise_ID: id, type: "reps", date: entry.date,
-              value: reps, previous: record.reps, weightKg,
+              exercise_ID: id,
+              type: "reps",
+              date: entry.date,
+              value: reps,
+              previous: record.reps,
+              weightKg,
             });
           }
         }

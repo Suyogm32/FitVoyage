@@ -13,7 +13,8 @@ import dayjs from "dayjs";
 export const isActiveOn = (exercise, date) => {
   const addedOn = exercise.addedOn || exercise._id?.getTimestamp?.();
   if (addedOn && dayjs(addedOn).isAfter(date, "day")) return false;
-  if (exercise.removedOn && !dayjs(exercise.removedOn).isAfter(date, "day")) return false;
+  if (exercise.removedOn && !dayjs(exercise.removedOn).isAfter(date, "day"))
+    return false;
   return true;
 };
 

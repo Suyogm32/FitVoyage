@@ -34,4 +34,5 @@ const WorkoutScheduleSchema = new Schema({
   exercises_done: [ExerciseLogSchema],
 });
 
-export const WorkoutsLog = models.WorkoutsLog || model("WorkoutsLog", WorkoutScheduleSchema);
+export const WorkoutsLog =
+  models.WorkoutsLog || model("WorkoutsLog", WorkoutScheduleSchema);

@@ -30,7 +30,6 @@ app.use("/api/saveworkout", saveWorkoutRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/progress", progressRoutes);
 
-
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });

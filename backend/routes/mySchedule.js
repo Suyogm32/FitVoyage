@@ -47,7 +47,9 @@ router.get("/", requireAuth, async (req, res) => {
 
     const refDate = dayjs(date, DATE_FORMAT, true);
     if (!refDate.isValid()) {
-      return res.status(400).json({ message: "Invalid date format. Expected DD/MM/YY." });
+      return res
+        .status(400)
+        .json({ message: "Invalid date format. Expected DD/MM/YY." });
     }
 
     const daySchedule = (workoutDoc?.schedule?.[day] || []).filter((ex) =>
@@ -86,7 +88,9 @@ router.get("/", requireAuth, async (req, res) => {
           exerciseGif: ex.exerciseGif || "",
           numberOfSets: sets.length,
           targetReps: sets.map((s) => s.targetReps),
-          usesWeight: sets.some((s) => s.weightUsed !== null && s.weightUsed !== undefined),
+          usesWeight: sets.some(
+            (s) => s.weightUsed !== null && s.weightUsed !== undefined,
+          ),
           targetWeight: sets.map((s) => s.targetWeight ?? 0),
           weightUnit: sets[0]?.weightUnit || "kg",
           unplanned: true,
@@ -97,7 +101,9 @@ router.get("/", requireAuth, async (req, res) => {
 
     res.json([...merged, ...unplanned]);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching schedule", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error fetching schedule", error: error.message });
   }
 });
 
@@ -121,10 +127,14 @@ router.post("/", requireAuth, async (req, res) => {
 
     const parsedDate = dayjs(date, DATE_FORMAT, true);
     if (!parsedDate.isValid()) {
-      return res.status(400).json({ message: "Invalid date format. Expected DD/MM/YY." });
+      return res
+        .status(400)
+        .json({ message: "Invalid date format. Expected DD/MM/YY." });
     }
     if (parsedDate.isAfter(dayjs(), "day")) {
-      return res.status(400).json({ message: "Cannot log a workout for a future date." });
+      return res
+        .status(400)
+        .json({ message: "Cannot log a workout for a future date." });
     }
 
     // Whether this was planned is decided server-side from the effective
@@ -161,7 +171,8 @@ router.post("/", requireAuth, async (req, res) => {
 
     if (!dateEntry) {
       workoutLog.exercises_done.push({ date, day, exercises: [] });
-      dateEntry = workoutLog.exercises_done[workoutLog.exercises_done.length - 1];
+      dateEntry =
+        workoutLog.exercises_done[workoutLog.exercises_done.length - 1];
     }
 
     const exerciseEntry = dateEntry.exercises.find(
@@ -187,7 +198,9 @@ router.post("/", requireAuth, async (req, res) => {
 
     res.json({ message: "Exercise log saved.", exercise_ID, setsCompleted });
   } catch (error) {
-    res.status(500).json({ message: "Error saving exercise log", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error saving exercise log", error: error.message });
   }
 });
 

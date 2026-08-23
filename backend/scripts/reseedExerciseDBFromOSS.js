@@ -62,8 +62,8 @@ const run = async () => {
 
   while (hasNextPage && total < limit) {
     const url = cursor
-                ? `https://oss.exercisedb.dev/api/v1/exercises?after=${cursor}`
-                : `https://oss.exercisedb.dev/api/v1/exercises`;
+      ? `https://oss.exercisedb.dev/api/v1/exercises?after=${cursor}`
+      : `https://oss.exercisedb.dev/api/v1/exercises`;
 
     const res = await fetchWithRetry(url);
     const page = await res.json();

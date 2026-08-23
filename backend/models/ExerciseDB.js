@@ -12,4 +12,5 @@ const ExerciseSchema = new Schema({
   instructions: [String],
 });
 
-export const ExerciseDB = models.ExerciseDB || model("ExerciseDB", ExerciseSchema);
+export const ExerciseDB =
+  models.ExerciseDB || model("ExerciseDB", ExerciseSchema);
