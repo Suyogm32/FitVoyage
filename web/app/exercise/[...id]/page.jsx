@@ -6,9 +6,9 @@ import { fetchData, youtubeVideoOptions } from "@/app/utils/fetchData";
 import Details from "@/app/components/ExerciseDetails/Details";
 import ExerciseVideos from "@/app/components/ExerciseDetails/ExerciseVideos";
 import SimilarExercises from "@/app/components/ExerciseDetails/SimilarExercises";
-
-import axios from "axios";
+import apiClient from "@/lib/apiClient";
 import Footer from "@/app/components/Footer";
+
 const ExerciseDetail = () => {
   const [currentExercise, setCurrentExercise] = useState({});
   const [exerciseVideosData, setExerciseVideosData] = useState([]);
@@ -17,30 +17,35 @@ const ExerciseDetail = () => {
   const path = usePathname();
   let patharray = path.split("/");
   const id = patharray[patharray.length - 1];
+
   useEffect(() => {
     const fetchExercisesData = async () => {
-      const exercisesDetails = await axios.get(`/api/ExerciseDB?id=${id}`);
+      const exercisesDetails = await apiClient.get("/api/exercisedb", {
+        params: { id },
+      });
       setCurrentExercise(exercisesDetails.data);
 
       const exerciseVideosDetails = await fetchData(
         `https://youtube-search-and-download.p.rapidapi.com/search?query=${exercisesDetails.data.name}`,
         youtubeVideoOptions,
       );
-      console.log("ExerciseVideosDetails are ->", exerciseVideosDetails);
       setExerciseVideosData(exerciseVideosDetails);
 
-      const targetMuscleExerciseDetails = await axios.get(
-        `/api/ExerciseDB/target?target=${exercisesDetails.data.target}`,
+      const targetMuscleExerciseDetails = await apiClient.get(
+        "/api/exercisedb/target",
+        { params: { target: exercisesDetails.data.target } },
       );
       setTargetMuscleExerciseData(targetMuscleExerciseDetails.data);
 
-      const equipmentExerciseDetails = await axios.get(
-        `/api/ExerciseDB/equipment?equipment=${exercisesDetails.data.equipment}`,
+      const equipmentExerciseDetails = await apiClient.get(
+        "/api/exercisedb/equipment",
+        { params: { equipment: exercisesDetails.data.equipment } },
       );
-      setEquipmentExerciseData(targetMuscleExerciseDetails.data);
+      setEquipmentExerciseData(equipmentExerciseDetails.data);
     };
     fetchExercisesData();
-  }, []);
+  }, [id]);
+
   return (
     <>
       <Navbar />

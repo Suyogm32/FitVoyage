@@ -3,14 +3,36 @@ import { ExerciseDB } from "../models/ExerciseDB.js";
 
 const router = Router();
 
-// GET /api/exercisedb?id=...  or  /api/exercisedb  (all)
+// GET /api/exercisedb?id=...  or  ?search=...  or  /api/exercisedb  (all)
 router.get("/", async (req, res) => {
   try {
-    const { id } = req.query;
+    const { id, search } = req.query;
+
     if (id) {
       const exercise = await ExerciseDB.findOne({ id });
       return res.json(exercise);
     }
+
+    if (search) {
+      const trimmed = search.trim();
+      if (!trimmed) return res.json([]);
+
+      // Escape regex metacharacters so a search like "a+b" or "(chest)"
+      // doesn't get interpreted as a regex pattern or blow up matching.
+      const escaped = trimmed.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(escaped, "i");
+
+      const exercises = await ExerciseDB.find({
+        $or: [
+          { name: regex },
+          { target: regex },
+          { equipment: regex },
+          { bodyPart: regex },
+        ],
+      });
+      return res.json(exercises);
+    }
+
     const exercises = await ExerciseDB.find({});
     return res.json(exercises);
   } catch (error) {

@@ -3,7 +3,7 @@ import { Box, Stack } from "@mui/material";
 import { Pagination } from "@mui/material";
 import ExerciseCard from "../homeComponents/Exercise/ExerciseCard";
 import AddExercise from "@/app/AddExercise/AddExercise";
-const ScheduleStack = ({ setExercises, exercises }) => {
+const ScheduleStack = ({ setExercises, exercises, onScheduleChange }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showPopup, setShowPopup] = useState(false);
   const [addExer, setAddExer] = useState({});
@@ -38,10 +38,11 @@ const ScheduleStack = ({ setExercises, exercises }) => {
         ))}
       </Stack>
       {showPopup && (
-        <>
-          {console.log("Neaserst to component", addExer)}
-          <AddExercise exerc={addExer} setShowPopup={setShowPopup} />
-        </>
+        <AddExercise
+          exerc={addExer}
+          setShowPopup={setShowPopup}
+          onScheduleChange={onScheduleChange}
+        />
       )}
       <Stack mt={"50px"} alignItems={"center"}>
         {exercises?.length > 8 && (

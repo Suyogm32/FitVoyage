@@ -2,30 +2,35 @@ import React, { useEffect, useState } from "react";
 import { TextField, Button, Box } from "@mui/material";
 import HorizontalScrollBar from "./HorizontalScrollBar";
 import axios from "axios";
+import apiClient from "@/lib/apiClient";
+
 const SearchExercises = ({ setExercises, bodyPart, setBodyPart }) => {
   const [search, setSearch] = useState("");
   const [bodyParts, setBodyParts] = useState([]);
+  const [searching, setSearching] = useState(false);
+
   useEffect(() => {
     const fetchExercisesData = async () => {
-      const resp = await axios.get("/api/ExerciseDB/bodyPart");
+      const resp = await apiClient.get("/api/exercisedb/bodyPart");
+
       const bodyPartsData = resp.data;
       setBodyParts(["all", ...bodyPartsData]);
     };
     fetchExercisesData();
   }, []);
-  const handleSearch = async (exercise) => {
-    if (search) {
-      const resp = await axios.get("/api/ExerciseDB");
-      const exerciseData = resp.data;
-      const searchedExercises = exerciseData.filter(
-        (exercise) =>
-          exercise.name.toLowerCase().includes(search) ||
-          exercise.target.toLowerCase().includes(search) ||
-          exercise.equipment.toLowerCase().includes(search) ||
-          exercise.bodyPart.toLowerCase().includes(search),
-      );
+  const handleSearch = async () => {
+    if (!search || searching) return;
+    setSearching(true);
+    try {
+      const resp = await apiClient.get("/api/exercisedb", {
+        params: { search },
+      });
+      setExercises(resp.data);
       setSearch("");
-      setExercises(searchedExercises);
+    } catch (error) {
+      console.error("Error searching exercises:", error);
+    } finally {
+      setSearching(false);
     }
   };
   return (
@@ -50,8 +55,13 @@ const SearchExercises = ({ setExercises, bodyPart, setBodyPart }) => {
             setSearch(e.target.value.toLowerCase());
           }}
         />
-        <Button variant="contained" color="error" onClick={handleSearch}>
-          Search
+        <Button
+          variant="contained"
+          color="error"
+          onClick={handleSearch}
+          disabled={searching}
+        >
+          {searching ? "Searching..." : "Search"}
         </Button>
       </div>
       {/* <Box sx={{position:'relative',width:'100%', p:'20px'}}> */}

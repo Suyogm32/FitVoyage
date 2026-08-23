@@ -1,11 +1,4 @@
 import axios from "axios";
-export const exerciseOptions = {
-  method: "GET",
-  headers: {
-    "X-RapidAPI-Key": "65c9145d2fmshcb66c9c3e9f6558p19891ejsn6d4d03059956",
-    "X-RapidAPI-Host": "exercisedb.p.rapidapi.com",
-  },
-};
 
 export const fetchData = async (url, options) => {
   const resp = await axios.request(url, options);

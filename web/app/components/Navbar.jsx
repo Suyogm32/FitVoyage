@@ -85,6 +85,7 @@ const Navbar = () => {
             <Link href={"/memberships"}>Memberships</Link>
             <Link href={"/myworkout"}>Workout</Link>
             <Link href={"/schedule"}>Schedule</Link>
+            <Link href={"/progress"}>Progress</Link>
             {user ? (
               <button onClick={logout} className="md:hidden">
                 Logout

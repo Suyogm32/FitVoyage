@@ -1,15 +1,15 @@
 import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/app/api/Authprovider/Authprovider";
 import { Button, Stack, Typography } from "@mui/material";
 
 const ExerciseCard = ({ exercise, setAddExer }) => {
-  const { status } = useSession();
+  const { user } = useAuth();
   const router = useRouter();
 
   const handleClick = () => {
-    if (status !== "authenticated") {
+    if (!user) {
       router.push("/login");
       return;
     }

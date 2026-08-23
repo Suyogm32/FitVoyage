@@ -50,15 +50,18 @@ const WorkoutCard = ({ exercise, onLog, onEdit }) => {
           />
         </div>
         <div className="flex flex-col gap-1">
-          <div className="flex justify-between items-center">
+           <div className="flex justify-between items-center gap-2">
             <Typography textTransform={"capitalize"}>
               {exercise.exerciseName}
             </Typography>
-            <Chip
-              label={exercise.status}
-              color={statusColor[exercise.status]}
-              size="small"
-            />
+            <div className="flex gap-1 shrink-0">
+              {exercise.unplanned && <Chip label="extra" size="small" variant="outlined" />}
+              <Chip
+                label={exercise.status}
+                color={statusColor[exercise.status]}
+                size="small"
+              />
+            </div>
           </div>
           <Typography>Sets - {exercise.numberOfSets}</Typography>
           <Typography>

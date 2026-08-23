@@ -6,6 +6,7 @@ const UserSchema = new Schema(
     firebaseUid: { type: String, required: true, unique: true },
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
+    preferredWeightUnit: { type: String, enum: ["kg", "lb"], default: "kg" },
   },
   { timestamps: true },
 );

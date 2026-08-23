@@ -7,6 +7,16 @@ const ExerciseDetailsSchema = new Schema({
   exerciseGif: { type: String, required: true },
   numberOfSets: { type: Number, default: 0 },
   targetReps: { type: [Number], default: [] },
+  usesWeight: { type: Boolean, default: false },
+  targetWeight: { type: [Number], default: [] },
+  weightUnit: { type: String, enum: ["kg", "lb"], default: "kg" },
+  // Effective-dating: an entry counts as scheduled on date X only when
+  // addedOn <= X < removedOn. Deletes are soft (set removedOn) so past
+  // dates keep showing what was actually planned at the time. Entries
+  // created before this feature have no addedOn — the ObjectId's own
+  // embedded timestamp is used as the fallback (see utils/scheduleActive.js).
+  addedOn: { type: Date, default: Date.now },
+  removedOn: { type: Date, default: null },
 });
 
 const WorkoutScheduleSchema = new Schema(

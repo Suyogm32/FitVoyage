@@ -2,6 +2,7 @@ import React, { useEffect, useState, usePathname } from "react";
 import styled from "styled-components";
 import ScheduleExerciseCard from "./ScheduleExerciseCard";
 import axios from "axios";
+import apiClient from "@/lib/apiClient";
 
 const GridContainer = styled.div`
   display: grid;
@@ -47,7 +48,7 @@ const ExerSchedule = ({ updateTrigger }) => {
 
   const fetchSchedule = async () => {
     try {
-      const response = await axios.get(`/api/MySchedule`);
+      const response = await apiClient.get("/api/myschedule");
       if (response.data && response.data[0]?.schedule) {
         setSchedule(response.data[0].schedule);
         setError(null);
@@ -90,7 +91,7 @@ const ExerSchedule = ({ updateTrigger }) => {
                           <ScheduleExerciseCard
                             exercise={exercise}
                             day={day}
-                            onRemoved={fetchSchedule}
+                            onChanged={fetchSchedule}
                             className="gap-4"
                           />
                         </li>

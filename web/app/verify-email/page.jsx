@@ -19,6 +19,7 @@ function VerifyEmailContent() {
     const verify = async () => {
       try {
         const { data } = await axios.post("/api/verify-email", { token });
+        console.log("Verification response:", data);
         setStatus("success");
         setMessage(data.message);
       } catch (error) {

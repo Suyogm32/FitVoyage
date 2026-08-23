@@ -4,6 +4,8 @@ import { Box, Stack, Typography } from "@mui/material";
 import ExerciseCard from "./ExerciseCard";
 import axios from "axios";
 import AddExercise from "@/app/AddExercise/AddExercise";
+import apiClient from "@/lib/apiClient";
+
 const Exercises = ({ setExercises, bodyPart, exercises }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showPopup, setShowPopup] = useState(false);
@@ -20,11 +22,11 @@ const Exercises = ({ setExercises, bodyPart, exercises }) => {
     const fetchExercisesData = async () => {
       let exercisesData = [];
       if (bodyPart === "all") {
-        exercisesData = await axios.get("/api/ExerciseDB");
+        exercisesData = await apiClient.get("/api/exercisedb");
       } else {
-        exercisesData = await axios.get(
-          `/api/ExerciseDB/bodyPart/?bodyPart=${bodyPart}`,
-        );
+        exercisesData = await apiClient.get("/api/exercisedb/bodyPart", {
+          params: { bodyPart },
+        });
       }
       setExercises(exercisesData.data);
     };

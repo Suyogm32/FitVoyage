@@ -1,6 +1,21 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+:root {
+  /* Dashboard tokens. Third pass, 2026-08-23: dark mode (v2) fought the
+     app's actual pink+red brand instead of extending it. Staying in the
+     existing light palette — neutral white/off-white cards holding their
+     own against the pink page background, red as the one accent. This
+     matches how the rest of the app already looks (white exercise cards
+     on the same pink body) rather than introducing a second visual
+     language just for this page. */
+  --primary: 1 100% 57%; /* #ff2625 — existing brand red, from .exercise-card */
+  --primary-foreground: 0 0% 100%;
+  --card: 0 0% 100%; /* white — stat cards, list rows */
+  --card-foreground: 240 10% 15%; /* near-black, soft */
+  --muted: 0 0% 90%; /* empty states / track backgrounds */
+  --muted-foreground: 0 0% 42%;
+}
 @layer base {
   * {
     @apply border-border;

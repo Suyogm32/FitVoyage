@@ -7,6 +7,8 @@ import { requireAuth } from "./middleware/auth.js";
 import exerciseDBRoutes from "./routes/exerciseDB.js";
 import myScheduleRoutes from "./routes/mySchedule.js";
 import saveWorkoutRoutes from "./routes/saveWorkout.js";
+import userRoutes from "./routes/user.js";
+import progressRoutes from "./routes/progress.js";
 
 const app = express();
 
@@ -17,7 +19,7 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || "")
   .map((s) => s.trim())
   .filter(Boolean);
 
-app.use(cors({ origin: allowedOrigins }));
+app.use(cors({ origin: allowedOrigins, maxAge: 86400 }));
 
 app.use(express.json());
 app.use(morgan("dev"));
@@ -25,7 +27,8 @@ app.use(morgan("dev"));
 app.use("/api/exercisedb", exerciseDBRoutes);
 app.use("/api/myschedule", myScheduleRoutes);
 app.use("/api/saveworkout", saveWorkoutRoutes);
-
+app.use("/api/user", userRoutes);
+app.use("/api/progress", progressRoutes);
 
 
 app.get("/health", (req, res) => {

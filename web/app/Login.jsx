@@ -23,6 +23,7 @@ const googleProvider = new GoogleAuthProvider();
 const Login = () => {
   const initialState = { email: "", password: "" };
   const [loginData, setLoginData] = useState(initialState);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
 
@@ -33,17 +34,23 @@ const Login = () => {
   };
 
   const handleGoogleLogin = async () => {
+    if (submitting) return;
+    setSubmitting(true);
     try {
       await signInWithPopup(auth, googleProvider);
       router.push("/");
     } catch (error) {
       console.error("Error occurred during login:", error);
       setError("Google sign-in failed. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const checkUser = async (e) => {
     e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
     setError("");
     try {
       const userCredential = await signInWithEmailAndPassword(
@@ -51,10 +58,6 @@ const Login = () => {
         loginData.email,
         loginData.password,
       );
-
-      // Firebase signs the user in regardless of verification status —
-      // unlike our old NextAuth setup, it won't block this for us.
-      // We enforce it ourselves.
       if (!userCredential.user.emailVerified) {
         setError(
           "Please verify your email before logging in — check your inbox for the link.",
@@ -62,7 +65,6 @@ const Login = () => {
         await auth.signOut();
         return;
       }
-
       router.push("/");
     } catch (error) {
       console.error("Error during login:", error);
@@ -71,6 +73,8 @@ const Login = () => {
       } else {
         setError("Failed to log in. Please try again later.");
       }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -109,14 +113,16 @@ const Login = () => {
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <button
             onClick={checkUser}
+            disabled={submitting}
             className="bg-white text-black p-2 px-4 rounded-lg"
           >
-            Login
+            {submitting ? "Logging in..." : "Login"}
           </button>
         </div>
         <button
           className="bg-white text-black p-2 px-4 rounded-lg"
           onClick={handleGoogleLogin}
+          disabled={submitting}
         >
           Login with Google
         </button>

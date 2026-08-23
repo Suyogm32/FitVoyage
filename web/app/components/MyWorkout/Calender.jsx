@@ -42,6 +42,7 @@ const Calender = ({ setSelectedDate }) => {
             orientation="landscape"
             value={value}
             onChange={(newValue) => setValue(newValue)}
+            maxDate={dayjs()}
             renderInput={(props) => <TextField {...props} />}
             sx={{ display: { xs: "inline", md: "inline" } }}
           />

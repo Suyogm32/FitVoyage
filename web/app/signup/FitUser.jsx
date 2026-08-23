@@ -1,6 +1,12 @@
 "use client";
 import React, { useState } from "react";
-import axios from "axios";
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+  sendEmailVerification,
+  signOut,
+} from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import styled from "styled-components";
 import Link from "next/link";
@@ -22,15 +28,11 @@ const SignupGrid = styled.div`
 `;
 
 const FitUser = () => {
-  const initialState = {
-    name: "",
-    email: "",
-    password: "",
-  };
-
+  const initialState = { name: "", email: "", password: "" };
   const [FitUserDetails, setFitUserDetails] = useState(initialState);
   const [error, setError] = useState("");
   const [accountCreated, setAccountCreated] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
 
   const PutAttribute = (e, attribute) => {
@@ -41,18 +43,31 @@ const FitUser = () => {
 
   const saveUser = async (e) => {
     e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
     setError("");
     try {
-      const data = { ...FitUserDetails };
-      await axios.post("/api/signup", data);
+      const { name, email, password } = FitUserDetails;
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
+      await updateProfile(userCredential.user, { displayName: name });
+      await sendEmailVerification(userCredential.user);
+      await signOut(auth);
       setAccountCreated(true);
     } catch (error) {
       console.error("Error creating account:", error);
-      if (error.response?.status === 409) {
+      if (error.code === "auth/email-already-in-use") {
         setError("An account with this email already exists.");
+      } else if (error.code === "auth/weak-password") {
+        setError("Password should be at least 6 characters.");
       } else {
         setError("Failed to create account. Please try again later.");
       }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -113,9 +128,10 @@ const FitUser = () => {
         {error && <p className="text-red-500 text-sm">{error}</p>}
         <button
           onClick={saveUser}
+          disabled={submitting}
           className="bg-white text-black p-2 px-4 rounded-lg mt-8"
         >
-          Submit
+          {submitting ? "Creating account..." : "Submit"}
         </button>
         <div className="flex items-center justify-end px-2 m-3 pt-4 border-t-2">
           Already have account?,{" "}

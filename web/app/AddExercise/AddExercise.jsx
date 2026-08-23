@@ -3,7 +3,7 @@ import React, { useRef } from "react";
 import { X } from "lucide-react";
 import AddExeForm from "./AddExeForm";
 import { useRouter } from "next/navigation";
-const AddExercise = ({ exerc, setShowPopup }) => {
+const AddExercise = ({ exerc, setShowPopup, onScheduleChange }) => {
   console.log("This is in AddExercise-> ", exerc);
   const boxRef = useRef();
   const router = useRouter();
@@ -27,7 +27,11 @@ const AddExercise = ({ exerc, setShowPopup }) => {
         <button className="place-self-end" onClick={handleClick}>
           <X size={30} />
         </button>
-        <AddExeForm exercise={exerc} setShowPopup={setShowPopup} />
+        <AddExeForm
+          exercise={exerc}
+          setShowPopup={setShowPopup}
+          onScheduleChange={onScheduleChange}
+        />
       </div>
     </div>
   );

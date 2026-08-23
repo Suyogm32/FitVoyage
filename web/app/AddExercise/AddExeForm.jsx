@@ -1,62 +1,66 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Typography, Button } from "@mui/material";
-import axios from "axios";
 import { useRouter } from "next/navigation";
+import apiClient from "@/lib/apiClient";
+import { usesWeightEquipment } from "@/app/utils/weightedEquipment";
+import SetPlanner from "@/app/components/SetPlanner";
 
-const AddExeForm = ({ exercise, setShowPopup }) => {
-  const ss = typeof window !== "undefined" ? window.sessionStorage : null;
+const AddExeForm = ({ exercise, setShowPopup, onScheduleChange }) => {
   const router = useRouter();
+  const [submitting, setSubmitting] = useState(false);
+  const defaultUsesWeight = usesWeightEquipment(exercise.equipment);
 
-  let initialState = {
+  const [userExercise, setUserExercise] = useState({
     exerciseName: exercise.name,
     exerciseId: exercise.id,
     exerciseGif: exercise.gifUrl,
     numberOfSets: 0,
     targetReps: [],
-  };
-
-  const [userExercise, setUserExercise] = useState(initialState);
+    usesWeight: defaultUsesWeight,
+    targetWeight: [],
+    weightUnit: "kg",
+  });
   const [error, setError] = useState("");
   const [day, setDay] = useState("mon");
 
-  const PutAttribute = (e, attribute) => {
-    const newExercise = { ...userExercise };
-    newExercise[attribute] = e.target.value;
-    setUserExercise(newExercise);
-  };
-
-  // Resizes targetReps to match the new set count, keeping existing values
-  const handleSetsChange = (e) => {
-    const newCount = Math.max(0, parseInt(e.target.value, 10) || 0);
-    setUserExercise((prev) => {
-      const newTargetReps = Array.from(
-        { length: newCount },
-        (_, i) => prev.targetReps[i] ?? 0,
-      );
-      return { ...prev, numberOfSets: newCount, targetReps: newTargetReps };
-    });
-  };
-
-  const handleTargetRepChange = (index, value) => {
-    const repValue = Math.max(0, parseInt(value, 10) || 0);
-    setUserExercise((prev) => {
-      const newTargetReps = [...prev.targetReps];
-      newTargetReps[index] = repValue;
-      return { ...prev, targetReps: newTargetReps };
-    });
-  };
+  // Pre-fill the weight unit from the user's saved preference, if they have
+  // one. Only affects the default shown here — doesn't overwrite the
+  // preference itself.
+  useEffect(() => {
+    let cancelled = false;
+    apiClient
+      .get("/api/user")
+      .then((res) => {
+        if (!cancelled && res.data?.preferredWeightUnit) {
+          setUserExercise((prev) => ({
+            ...prev,
+            weightUnit: res.data.preferredWeightUnit,
+          }));
+        }
+      })
+      .catch(() => {
+        // Non-critical — just keep the "kg" default.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const saveUserExercise = async (e) => {
     e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
     try {
-      const data = { day, userExercise };
-      const resp = await axios.put("/api/SaveWorkout", data);
+      await apiClient.put("/api/saveworkout", { day, userExercise });
+      onScheduleChange?.();
       setShowPopup(false);
       router.push("/schedule");
-    } catch (error) {
-      console.error("Error creating product:", error);
-      setError("Failed to create product. Please try again later.");
+    } catch (err) {
+      console.error("Error adding exercise:", err);
+      setError("Failed to add exercise. Please try again later.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -74,13 +78,6 @@ const AddExeForm = ({ exercise, setShowPopup }) => {
           className="p-4 py-2"
           readOnly
         />
-        <input
-          type="text"
-          name="ExerciseId"
-          value={userExercise.exerciseId}
-          className="hidden"
-          readOnly
-        />
         <select
           value={day}
           onChange={(e) => setDay(e.target.value)}
@@ -94,40 +91,19 @@ const AddExeForm = ({ exercise, setShowPopup }) => {
           <option value="sat">Saturday</option>
           <option value="sun">Sunday</option>
         </select>
-        <input
-          type="number"
-          name="Sets"
-          min="0"
-          placeholder={"Number of Sets"}
-          value={userExercise.numberOfSets}
-          onChange={handleSetsChange}
-          className="p-4 py-2"
-        />
 
-        {userExercise.numberOfSets > 0 && (
-          <div className="flex flex-col gap-2 w-full">
-            <Typography variant="body2">Target reps for each set</Typography>
-            {Array.from({ length: userExercise.numberOfSets }).map((_, i) => (
-              <input
-                key={i}
-                type="number"
-                min="0"
-                placeholder={`Set ${i + 1} target reps`}
-                value={userExercise.targetReps[i] ?? 0}
-                onChange={(e) => handleTargetRepChange(i, e.target.value)}
-                className="p-4 py-2 w-full"
-              />
-            ))}
-          </div>
-        )}
+        <SetPlanner plan={userExercise} onChange={setUserExercise} />
+
+        {error && <Typography color="error">{error}</Typography>}
 
         <Button
           onClick={saveUserExercise}
           variant="contained"
           color="error"
+          disabled={submitting}
           className="place-self-center"
         >
-          Add
+          {submitting ? "Adding..." : "Add"}
         </Button>
       </div>
     </div>

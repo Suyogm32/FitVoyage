@@ -3,7 +3,7 @@ import React from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { Typography } from "@mui/material";
 
-const WorkoutColumn = ({ id, title, children }) => {
+const WorkoutColumn = ({ id, title, action, children }) => {
   const { isOver, setNodeRef } = useDroppable({ id });
 
   return (
@@ -13,9 +13,10 @@ const WorkoutColumn = ({ id, title, children }) => {
         isOver ? "bg-green-50" : ""
       }`}
     >
-      <Typography variant="h5" sx={{ mb: 2 }}>
-        {title}
-      </Typography>
+      <div className="flex justify-between items-center gap-2 mb-4">
+        <Typography variant="h5">{title}</Typography>
+        {action}
+      </div>
       {children}
     </div>
   );
