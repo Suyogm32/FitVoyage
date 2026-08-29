@@ -10,6 +10,7 @@ import {
   detectPersonalRecords,
   dedupePersonalRecords,
 } from "../utils/personalRecords.js";
+import { User } from "../models/User.js";
 
 dayjs.extend(customParseFormat);
 
@@ -27,9 +28,10 @@ router.get("/", requireAuth, async (req, res) => {
 
     const rangeDays = RANGE_DAYS[range] || RANGE_DAYS.month;
 
-    const [logDoc, workoutDoc] = await Promise.all([
+    const [logDoc, workoutDoc, userDoc] = await Promise.all([
       WorkoutsLog.findOne({ user: userId }).lean(),
       Workouts.findOne({ user: userId }).lean(),
+      User.findById(userId).select("weeklyGoals").lean(),
     ]);
 
     const entries = (logDoc?.exercises_done || [])
@@ -204,8 +206,31 @@ router.get("/", requireAuth, async (req, res) => {
           (muscleGroupTotals[bodyPart] || 0) + setCount;
       }
     }
-    const muscleGroups = Object.entries(muscleGroupTotals)
-      .map(([bodyPart, sets]) => ({ bodyPart, sets }))
+    // Weekly goals scaled to the selected range, so one stored number works
+    // for week/month/year. Body parts with a goal but nothing logged still
+    // appear — "0 of 20" is the most useful row on the chart.
+    const weeklyGoals = userDoc?.weeklyGoals || [];
+    const goalByBodyPart = Object.fromEntries(
+      weeklyGoals.map((g) => [g.bodyPart, g.targetSets]),
+    );
+    const rangeWeeks = rangeDays / 7;
+
+    const allBodyParts = new Set([
+      ...Object.keys(muscleGroupTotals),
+      ...Object.keys(goalByBodyPart),
+    ]);
+
+    const muscleGroups = [...allBodyParts]
+      .map((bodyPart) => {
+        const weeklyTarget = goalByBodyPart[bodyPart] || 0;
+        return {
+          bodyPart,
+          sets: muscleGroupTotals[bodyPart] || 0,
+          targetSets: weeklyTarget
+            ? Math.round(weeklyTarget * rangeWeeks)
+            : null,
+        };
+      })
       .sort((a, b) => b.sets - a.sets);
 
     const exerciseAgg = {};
@@ -257,15 +282,15 @@ router.get("/", requireAuth, async (req, res) => {
       muscleGroups,
       topExercises,
       recentPRs,
+      muscleGroups,
+      weeklyGoals,
       prCount,
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        message: "Error computing progress stats.",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Error computing progress stats.",
+      error: error.message,
+    });
   }
 });
 

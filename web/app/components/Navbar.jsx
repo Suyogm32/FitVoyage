@@ -82,7 +82,6 @@ const Navbar = () => {
             </button>
             <Link href={"/"}>Home</Link>
             <Link href={"#exercises"}>Exercises</Link>
-            <Link href={"/memberships"}>Memberships</Link>
             <Link href={"/myworkout"}>Workout</Link>
             <Link href={"/schedule"}>Schedule</Link>
             <Link href={"/progress"}>Progress</Link>

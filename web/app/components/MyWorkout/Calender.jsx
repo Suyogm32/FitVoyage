@@ -6,15 +6,10 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { Box } from "@mui/material";
 import "react-calendar/dist/Calendar.css";
-import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
-import { Typography } from "@mui/material";
+
 const Calender = ({ setSelectedDate }) => {
-  const [value, setValue] = React.useState(dayjs(new Date()));
+  const [value, setValue] = useState(dayjs(new Date()));
   const [isClient, setIsClient] = useState(false);
-  console.log(value["$d"]);
-  console.log("type of date is ", typeof value["$d"]);
-  console.log(new Date(value["$d"]).getDay());
-  //console.log(dayString);
 
   // Update the parent component's selectedDate when value changes
   useEffect(() => {
@@ -43,14 +38,8 @@ const Calender = ({ setSelectedDate }) => {
             value={value}
             onChange={(newValue) => setValue(newValue)}
             maxDate={dayjs()}
-            renderInput={(props) => <TextField {...props} />}
             sx={{ display: { xs: "inline", md: "inline" } }}
           />
-          {/* <DateCalendar
-            value={value}
-            onChange={(newValue) => setValue(newValue)}
-            sx={{display:{xs:'inline-block',md:'none'}}}
-          /> */}
         </LocalizationProvider>
       )}
     </Box>

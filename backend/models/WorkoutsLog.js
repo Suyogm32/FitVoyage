@@ -3,14 +3,17 @@ const { Schema, models, model } = mongoose;
 
 const ExerciseSchema = new Schema({
   exercise_ID: { type: String, required: true },
-  // Name/gif are snapshotted here rather than looked up from the schedule,
-  // because ad-hoc entries have no schedule entry to look up. Also means a
-  // logged exercise keeps its display data even if removed from the plan.
   exerciseName: { type: String, default: "" },
   exerciseGif: { type: String, default: "" },
-  // True when this exercise wasn't on the schedule for that date. Recorded
-  // at log time, so later schedule edits don't rewrite it.
   unplanned: { type: Boolean, default: false },
+  // Coach input: RPE in three buckets rather than a 1-10 scale, because a
+  // ten-point picker per exercise is friction people abandon. Null for
+  // anyone not in coach mode.
+  feel: {
+    type: String,
+    enum: ["easy", "just_right", "struggled"],
+    default: null,
+  },
   setsCompleted: [
     {
       setNumber: { type: Number, required: true },
@@ -26,6 +29,13 @@ const ExerciseSchema = new Schema({
 const ExerciseLogSchema = new Schema({
   date: { type: String, required: true },
   day: { type: String, required: true },
+  // Session-level, one tap when the day is opened. Stands in for sleep,
+  // stress and soreness combined — one signal instead of three questions.
+  readiness: {
+    type: String,
+    enum: ["fresh", "normal", "beat_up"],
+    default: null,
+  },
   exercises: [ExerciseSchema],
 });
 

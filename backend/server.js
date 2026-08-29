@@ -3,12 +3,13 @@ import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import connectDB from "./config/db.js";
-import { requireAuth } from "./middleware/auth.js";
 import exerciseDBRoutes from "./routes/exerciseDB.js";
 import myScheduleRoutes from "./routes/mySchedule.js";
 import saveWorkoutRoutes from "./routes/saveWorkout.js";
 import userRoutes from "./routes/user.js";
 import progressRoutes from "./routes/progress.js";
+import coachRoutes from "./routes/coach.js";
+import programRoutes from "./routes/program.js";
 
 const app = express();
 
@@ -29,13 +30,11 @@ app.use("/api/myschedule", myScheduleRoutes);
 app.use("/api/saveworkout", saveWorkoutRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/progress", progressRoutes);
+app.use("/api/coach", coachRoutes);
+app.use("/api/program", programRoutes);
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
-});
-
-app.get("/protected", requireAuth, (req, res) => {
-  res.json({ message: "authenticated", user: req.user });
 });
 
 const PORT = process.env.PORT || 5000;

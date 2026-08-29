@@ -1,7 +1,6 @@
 import React, { useEffect, useState, usePathname } from "react";
 import styled from "styled-components";
 import ScheduleExerciseCard from "./ScheduleExerciseCard";
-import axios from "axios";
 import apiClient from "@/lib/apiClient";
 
 const GridContainer = styled.div`

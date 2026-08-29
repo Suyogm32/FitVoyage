@@ -22,7 +22,9 @@ const AdHocLogModal = ({ date, day, onClose, onSaved }) => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const tracksWeight = selected ? usesWeightEquipment(selected.equipment) : false;
+  const tracksWeight = selected
+    ? usesWeightEquipment(selected.equipment)
+    : false;
 
   const runSearch = async () => {
     if (!query.trim() || searching) return;
@@ -109,7 +111,11 @@ const AdHocLogModal = ({ date, day, onClose, onSaved }) => {
                 onClick={() => setSelected(ex)}
                 className="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-black/5"
               >
-                <img src={ex.gifUrl} alt={ex.name} className="w-12 h-12 rounded" />
+                <img
+                  src={ex.gifUrl}
+                  alt={ex.name}
+                  className="w-12 h-12 rounded"
+                />
                 <div>
                   <Typography textTransform="capitalize">{ex.name}</Typography>
                   <Typography variant="body2" color="text.secondary">
@@ -155,7 +161,10 @@ const AdHocLogModal = ({ date, day, onClose, onSaved }) => {
                 )}
               </Stack>
             ))}
-            <Button size="small" onClick={() => setSets([...sets, { reps: "", weight: "" }])}>
+            <Button
+              size="small"
+              onClick={() => setSets([...sets, { reps: "", weight: "" }])}
+            >
               Add set
             </Button>
             <Button size="small" onClick={() => setSelected(null)}>
@@ -167,7 +176,11 @@ const AdHocLogModal = ({ date, day, onClose, onSaved }) => {
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" disabled={!selected || saving} onClick={handleSave}>
+        <Button
+          variant="contained"
+          disabled={!selected || saving}
+          onClick={handleSave}
+        >
           {saving ? "Saving..." : "Log it"}
         </Button>
       </DialogActions>

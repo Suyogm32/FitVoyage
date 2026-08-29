@@ -4,7 +4,6 @@ import { X } from "lucide-react";
 import AddExeForm from "./AddExeForm";
 import { useRouter } from "next/navigation";
 const AddExercise = ({ exerc, setShowPopup, onScheduleChange }) => {
-  console.log("This is in AddExercise-> ", exerc);
   const boxRef = useRef();
   const router = useRouter();
   const handleClick = () => {

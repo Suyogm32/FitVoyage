@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { TextField, Button, Box } from "@mui/material";
 import HorizontalScrollBar from "./HorizontalScrollBar";
-import axios from "axios";
 import apiClient from "@/lib/apiClient";
 
 const SearchExercises = ({ setExercises, bodyPart, setBodyPart }) => {

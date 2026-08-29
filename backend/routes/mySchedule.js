@@ -110,7 +110,7 @@ router.get("/", requireAuth, async (req, res) => {
 router.post("/", requireAuth, async (req, res) => {
   try {
     const userId = req.user.dbId;
-    const { date, day, exercise_ID, setsCompleted } = req.body;
+    const { date, day, exercise_ID, setsCompleted, feel } = req.body;
 
     if (
       !date ||
@@ -179,17 +179,22 @@ router.post("/", requireAuth, async (req, res) => {
       (ex) => ex.exercise_ID === exercise_ID,
     );
 
+    const FEELS = ["easy", "just_right", "struggled"];
+    const safeFeel = FEELS.includes(feel) ? feel : null;
+
     if (exerciseEntry) {
       exerciseEntry.setsCompleted = setsCompleted;
       exerciseEntry.exerciseName = exerciseName;
       exerciseEntry.exerciseGif = exerciseGif;
       exerciseEntry.unplanned = !planned;
+      exerciseEntry.feel = safeFeel;
     } else {
       dateEntry.exercises.push({
         exercise_ID,
         exerciseName,
         exerciseGif,
         unplanned: !planned,
+        feel: safeFeel,
         setsCompleted,
       });
     }
@@ -201,6 +206,74 @@ router.post("/", requireAuth, async (req, res) => {
     res
       .status(500)
       .json({ message: "Error saving exercise log", error: error.message });
+  }
+});
+
+// Session-level readiness. Separate from the exercise log so it can be
+// recorded when the day is opened, before anything has been logged.
+router.get("/readiness", requireAuth, async (req, res) => {
+  try {
+    const { date, day } = req.query;
+    if (!date || !day) {
+      return res.status(400).json({ message: "Missing date or day." });
+    }
+    const logDoc = await WorkoutsLog.findOne({ user: req.user.dbId }).lean();
+    const entry = logDoc?.exercises_done?.find(
+      (e) => e.date === date && e.day === day,
+    );
+    res.json({ readiness: entry?.readiness || null });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching readiness.", error: error.message });
+  }
+});
+
+router.post("/readiness", requireAuth, async (req, res) => {
+  try {
+    const { date, day, readiness } = req.body;
+    const READINESS = ["fresh", "normal", "beat_up"];
+
+    if (!date || !day || !READINESS.includes(readiness)) {
+      return res.status(400).json({
+        message: "Required: date, day, readiness (fresh | normal | beat_up).",
+      });
+    }
+
+    const parsedDate = dayjs(date, DATE_FORMAT, true);
+    if (!parsedDate.isValid()) {
+      return res
+        .status(400)
+        .json({ message: "Invalid date format. Expected DD/MM/YY." });
+    }
+    if (parsedDate.isAfter(dayjs(), "day")) {
+      return res
+        .status(400)
+        .json({ message: "Cannot check in for a future date." });
+    }
+
+    let workoutLog = await WorkoutsLog.findOne({ user: req.user.dbId });
+    if (!workoutLog) {
+      workoutLog = new WorkoutsLog({ user: req.user.dbId, exercises_done: [] });
+    }
+
+    let dateEntry = workoutLog.exercises_done.find(
+      (entry) => entry.date === date && entry.day === day,
+    );
+    if (!dateEntry) {
+      workoutLog.exercises_done.push({ date, day, exercises: [] });
+      dateEntry =
+        workoutLog.exercises_done[workoutLog.exercises_done.length - 1];
+    }
+
+    dateEntry.readiness = readiness;
+    await workoutLog.save();
+
+    res.json({ readiness });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error saving readiness.", error: error.message });
   }
 });
 

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Pagination } from "@mui/material";
 import { Box, Stack, Typography } from "@mui/material";
 import ExerciseCard from "./ExerciseCard";
-import axios from "axios";
 import AddExercise from "@/app/AddExercise/AddExercise";
 import apiClient from "@/lib/apiClient";
 
@@ -20,21 +19,24 @@ const Exercises = ({ setExercises, bodyPart, exercises }) => {
 
   useEffect(() => {
     const fetchExercisesData = async () => {
-      let exercisesData = [];
-      if (bodyPart === "all") {
-        exercisesData = await apiClient.get("/api/exercisedb");
-      } else {
-        exercisesData = await apiClient.get("/api/exercisedb/bodyPart", {
-          params: { bodyPart },
-        });
-      }
-      setExercises(exercisesData.data);
+      const response =
+        bodyPart === "all"
+          ? await apiClient.get("/api/exercisedb")
+          : await apiClient.get("/api/exercisedb/bodyPart", {
+              params: { bodyPart },
+            });
+      setExercises(response.data);
     };
     fetchExercisesData();
+  }, [bodyPart, setExercises]);
+
+  // Opening the popup is unrelated to fetching — sharing one effect meant
+  // every "+" click refetched the whole catalog.
+  useEffect(() => {
     if (addExer.name) {
       setShowPopup(true);
     }
-  }, [bodyPart, addExer]);
+  }, [addExer]);
 
   const paginate = (e, value) => {
     setCurrentPage(value);
@@ -59,10 +61,7 @@ const Exercises = ({ setExercises, bodyPart, exercises }) => {
         ))}
       </Stack>
       {showPopup && (
-        <>
-          {console.log("Neaserst to component", addExer)}
-          <AddExercise exerc={addExer} setShowPopup={setShowPopup} />
-        </>
+        <AddExercise exerc={addExer} setShowPopup={setShowPopup} />
       )}
       <Stack mt={"50px"} alignItems={"center"}>
         {exercises?.length > 8 && (

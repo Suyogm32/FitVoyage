@@ -11,43 +11,40 @@ import {
   Stack,
 } from "@mui/material";
 
-const LogSetsModal = ({ exercise, onSave, onClose }) => {
+const FEEL_OPTIONS = [
+  { value: "easy", label: "Easy" },
+  { value: "just_right", label: "Just right" },
+  { value: "struggled", label: "Struggled" },
+];
+
+const LogSetsModal = ({ exercise, coachMode, onSave, onClose }) => {
   const [reps, setReps] = useState([]);
   const [weights, setWeights] = useState([]);
+  const [feel, setFeel] = useState(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!exercise) return;
     const existing = exercise.setsCompleted || [];
 
-    const initialReps = Array.from(
-      { length: exercise.numberOfSets },
-      (_, i) => {
-        const match = existing.find((s) => s.setNumber === i + 1);
-        return match ? match.repsCompleted : "";
-      },
-    );
+    const initialReps = Array.from({ length: exercise.numberOfSets }, (_, i) => {
+      const match = existing.find((s) => s.setNumber === i + 1);
+      return match ? match.repsCompleted : "";
+    });
 
     // Prefill weight with what was already logged, falling back to the
-    // planned target so the common case ("I lifted what I planned") is just
-    // a confirmation rather than re-typing.
-    const initialWeights = Array.from(
-      { length: exercise.numberOfSets },
-      (_, i) => {
-        const match = existing.find((s) => s.setNumber === i + 1);
-        if (
-          match &&
-          match.weightUsed !== null &&
-          match.weightUsed !== undefined
-        ) {
-          return match.weightUsed;
-        }
-        return exercise.targetWeight?.[i] ?? "";
-      },
-    );
+    // planned target so the common case is a confirmation, not retyping.
+    const initialWeights = Array.from({ length: exercise.numberOfSets }, (_, i) => {
+      const match = existing.find((s) => s.setNumber === i + 1);
+      if (match && match.weightUsed !== null && match.weightUsed !== undefined) {
+        return match.weightUsed;
+      }
+      return exercise.targetWeight?.[i] ?? "";
+    });
 
     setReps(initialReps);
     setWeights(initialWeights);
+    setFeel(exercise.feel || null);
   }, [exercise]);
 
   if (!exercise) return null;
@@ -71,10 +68,6 @@ const LogSetsModal = ({ exercise, onSave, onClose }) => {
     setWeights(next);
   };
 
-  const handleSkip = (index) => {
-    handleRepChange(index, 0);
-  };
-
   const handleSave = async () => {
     if (saving) return;
     setSaving(true);
@@ -89,7 +82,7 @@ const LogSetsModal = ({ exercise, onSave, onClose }) => {
           weightUnit: unit,
         }),
       }));
-      await onSave(setsCompleted);
+      await onSave(setsCompleted, coachMode ? feel : null);
     } finally {
       setSaving(false);
     }
@@ -97,9 +90,7 @@ const LogSetsModal = ({ exercise, onSave, onClose }) => {
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle textTransform="capitalize">
-        {exercise.exerciseName}
-      </DialogTitle>
+      <DialogTitle textTransform="capitalize">{exercise.exerciseName}</DialogTitle>
       <DialogContent>
         {!hasTargets ? (
           <Typography color="error">
@@ -129,11 +120,32 @@ const LogSetsModal = ({ exercise, onSave, onClose }) => {
                     sx={{ width: 140 }}
                   />
                 )}
-                <Button size="small" onClick={() => handleSkip(i)}>
+                <Button size="small" onClick={() => handleRepChange(i, 0)}>
                   Skip
                 </Button>
               </Stack>
             ))}
+
+            {coachMode && (
+              <div>
+                <Typography variant="body2" className="mb-2">
+                  How did that feel?
+                </Typography>
+                <Stack direction="row" gap={1}>
+                  {FEEL_OPTIONS.map((option) => (
+                    <Button
+                      key={option.value}
+                      size="small"
+                      color="error"
+                      variant={feel === option.value ? "contained" : "outlined"}
+                      onClick={() => setFeel(option.value)}
+                    >
+                      {option.label}
+                    </Button>
+                  ))}
+                </Stack>
+              </div>
+            )}
           </Stack>
         )}
       </DialogContent>

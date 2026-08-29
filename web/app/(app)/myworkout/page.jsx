@@ -1,19 +1,18 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "../api/Authprovider/Authprovider";
-import Navbar from "../components/Navbar";
-import Calender from "../components/MyWorkout/Calender";
-import WorkoutCard from "../components/MyWorkout/WorkoutCard";
-import WorkoutColumn from "../components/MyWorkout/WorkoutColumn";
-import LogSetsModal from "../components/MyWorkout/LogSetsModal";
-import AdHocLogModal from "../components/MyWorkout/AdHocLogModal";
-import WeeklyProgress from "../components/MyWorkout/WeeklyProgress";
-import styled from "styled-components";
+import Calender from "@/app/components/MyWorkout/Calender";
+import WorkoutCard from "@/app/components/MyWorkout/WorkoutCard";
+import WorkoutColumn from "@/app/components/MyWorkout/WorkoutColumn";
+import LogSetsModal from "@/app/components/MyWorkout/LogSetsModal";
+import AdHocLogModal from "@/app/components/MyWorkout/AdHocLogModal";
+import ReadinessCheckIn from "@/app/components/MyWorkout/ReadinessCheckIn";
+import WeeklyProgress from "@/app/components/MyWorkout/WeeklyProgress";
 import dayjs from "dayjs";
 import { Button } from "@mui/material";
 import apiClient from "@/lib/apiClient";
 import { useProgress } from "@/lib/useProgress";
+import { useUserProfile } from "@/lib/useUserProfile";
+import { useCoachSuggestions } from "@/lib/useCoachSuggestions";
 
 import {
   DndContext,
@@ -22,10 +21,6 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-
-const WorkoutWrapper = styled.div`
-  background-color: "#f3a5a5";
-`;
 
 const days = {
   0: "sun",
@@ -38,20 +33,22 @@ const days = {
 };
 
 const MyWorkout = () => {
-  const { user, loading } = useAuth();
-  const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [exercises, setExercises] = useState([]);
   const [modalExercise, setModalExercise] = useState(null);
   const [showAdHoc, setShowAdHoc] = useState(false);
   const [weekRefreshTrigger, setWeekRefreshTrigger] = useState(0);
 
-  // Only the week breakdown lives on this page now — the full dashboard is
-  // on /progress. No range param needed; currentWeek follows the calendar.
   const { stats } = useProgress({
     referenceDate: selectedDate,
     refreshTrigger: weekRefreshTrigger,
   });
+  const { profile } = useUserProfile();
+  const coachMode = Boolean(profile?.coachMode);
+
+  const formattedDate = dayjs(selectedDate).format("DD/MM/YY");
+  const dayKey = days[new Date(selectedDate).getDay()];
+  const isToday = dayjs(selectedDate).isSame(dayjs(), "day");
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -60,36 +57,26 @@ const MyWorkout = () => {
     }),
   );
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push("/login");
-    }
-  }, [user, loading, router]);
-
   const loadExercises = useCallback(async () => {
     try {
       const { data } = await apiClient.get("/api/myschedule", {
-        params: {
-          date: dayjs(selectedDate).format("DD/MM/YY"),
-          day: days[new Date(selectedDate).getDay()],
-        },
+        params: { date: formattedDate, day: dayKey },
       });
-
       setExercises(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error loading schedule:", error);
     }
-  }, [selectedDate]);
+  }, [formattedDate, dayKey]);
 
   useEffect(() => {
-    if (user) {
-      loadExercises();
-    }
-  }, [loadExercises, user]);
+    loadExercises();
+  }, [loadExercises]);
 
-  if (loading || !user) {
-    return null;
-  }
+  const suggestions = useCoachSuggestions({
+    date: formattedDate,
+    day: dayKey,
+    refreshTrigger: weekRefreshTrigger,
+  });
 
   const todo = exercises.filter((e) => e.status === "incomplete");
   const done = exercises.filter((e) => e.status !== "incomplete");
@@ -101,14 +88,15 @@ const MyWorkout = () => {
     if (exercise) setModalExercise(exercise);
   };
 
-  const handleSaveLog = async (setsCompleted) => {
+  const handleSaveLog = async (setsCompleted, feel) => {
     if (!modalExercise) return;
     try {
       await apiClient.post("/api/myschedule", {
-        date: dayjs(selectedDate).format("DD/MM/YY"),
-        day: days[new Date(selectedDate).getDay()],
+        date: formattedDate,
+        day: dayKey,
         exercise_ID: modalExercise.exerciseId,
         setsCompleted,
+        feel,
       });
       setModalExercise(null);
       loadExercises();
@@ -123,11 +111,42 @@ const MyWorkout = () => {
     setWeekRefreshTrigger((prev) => prev + 1);
   };
 
-  return (
-    <WorkoutWrapper>
-      <Navbar />
+    // Applying a suggestion is a schedule edit, so it goes through the same
+  // versioned PATCH: the old entry is tombstoned and a new one dated today
+  // replaces it. Past dates keep the targets they actually had.
+  const applySuggestion = async (exercise, suggestion) => {
+    try {
+      await apiClient.patch("/api/saveworkout", {
+        day: dayKey,
+        exerciseEntryId: exercise._id,
+        updates: {
+          numberOfSets: exercise.numberOfSets,
+          targetReps: suggestion.suggestedReps,
+          usesWeight: exercise.usesWeight,
+          targetWeight: suggestion.usesWeight
+            ? suggestion.suggestedWeights.filter((w) => w != null)
+            : [],
+          weightUnit: exercise.weightUnit,
+        },
+      });
+      loadExercises();
+      setWeekRefreshTrigger((prev) => prev + 1);
+    } catch (error) {
+      console.error("Error applying suggestion:", error);
+    }
+  };
 
-      <div className="flex flex-col gap-8 md:flex-row px-4 items-start mt-6">
+  return (
+    <>
+      {/* Only for today — "how are you feeling" is a present-tense question,
+          and coach mode users opted into being asked. */}
+      {coachMode && isToday && (
+        <div className="mb-6">
+          <ReadinessCheckIn date={formattedDate} day={dayKey} />
+        </div>
+      )}
+
+      <div className="flex flex-col gap-8 md:flex-row items-start">
         <Calender className="flex flex-auto" setSelectedDate={setSelectedDate} />
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
           <WorkoutColumn
@@ -150,6 +169,8 @@ const MyWorkout = () => {
                   exercise={exercise}
                   onLog={setModalExercise}
                   onEdit={setModalExercise}
+                  suggestion={suggestions[exercise.exerciseId]}
+                  onApplySuggestion={applySuggestion}
                 />
               ))
             ) : (
@@ -164,6 +185,7 @@ const MyWorkout = () => {
                   exercise={exercise}
                   onLog={setModalExercise}
                   onEdit={setModalExercise}
+                  suggestion={suggestions[exercise.exerciseId]}
                 />
               ))
             ) : (
@@ -176,14 +198,14 @@ const MyWorkout = () => {
         </DndContext>
       </div>
 
-      <div className="px-4 mt-8 pb-8">
+      <div className="mt-8">
         <WeeklyProgress currentWeek={stats?.currentWeek} />
       </div>
 
       {showAdHoc && (
         <AdHocLogModal
-          date={dayjs(selectedDate).format("DD/MM/YY")}
-          day={days[new Date(selectedDate).getDay()]}
+          date={formattedDate}
+          day={dayKey}
           onClose={() => setShowAdHoc(false)}
           onSaved={refreshAfterAdHoc}
         />
@@ -192,11 +214,12 @@ const MyWorkout = () => {
       {modalExercise && (
         <LogSetsModal
           exercise={modalExercise}
+          coachMode={coachMode}
           onSave={handleSaveLog}
           onClose={() => setModalExercise(null)}
         />
       )}
-    </WorkoutWrapper>
+    </>
   );
 };
 
