@@ -14,8 +14,8 @@ import { useUserProfile } from "@/lib/useUserProfile";
 import { useBodyParts } from "@/lib/bodyParts";
 import ProgramReview from "@/app/components/program/ProgramReview";
 import { useRouter } from "next/navigation";
+import { cardClass } from "@/lib/styles";
 
-const cardClass = "bg-card rounded-xl shadow-sm border border-black/5";
 const textMuted = { color: "hsl(var(--muted-foreground))" };
 
 const DAY_OPTIONS = [

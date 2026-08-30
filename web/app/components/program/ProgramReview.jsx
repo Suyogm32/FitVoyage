@@ -3,9 +3,23 @@ import React, { useState, useEffect } from "react";
 import { Typography, Button, TextField } from "@mui/material";
 import { RefreshCw, Pencil, X, Check } from "lucide-react";
 import apiClient from "@/lib/apiClient";
+import { cardClass } from "@/lib/styles";
 
-const cardClass = "bg-card rounded-xl shadow-sm border border-black/5";
 const textMuted = { color: "hsl(var(--muted-foreground))" };
+
+// Status, not brand. Green reads as "being added", blue as "already here".
+// Both are accent-independent so the legend keeps its meaning after a theme
+// switch — and red is reserved for genuine destructive states.
+const ROW_STYLES = {
+  new: {
+    backgroundColor: "hsl(var(--success) / 0.12)",
+    borderLeft: "3px solid hsl(var(--success))",
+  },
+  existing: {
+    backgroundColor: "hsl(var(--info) / 0.07)",
+    borderLeft: "3px solid hsl(var(--info) / 0.45)",
+  },
+};
 
 const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const DAY_LABELS = {
@@ -205,12 +219,15 @@ const ProgramReview = ({
           <span className="flex items-center gap-1.5" style={textMuted}>
             <span
               className="w-2.5 h-2.5 rounded-sm inline-block"
-              style={{ backgroundColor: "hsl(var(--primary) / 0.18)" }}
+              style={{ backgroundColor: "hsl(var(--success))" }}
             />
             new
           </span>
           <span className="flex items-center gap-1.5" style={textMuted}>
-            <span className="w-2.5 h-2.5 rounded-sm inline-block border border-black/15" />
+            <span
+              className="w-2.5 h-2.5 rounded-sm inline-block"
+              style={{ backgroundColor: "hsl(var(--info) / 0.55)" }}
+            />
             already scheduled
           </span>
         </div>
@@ -229,7 +246,7 @@ const ProgramReview = ({
             </Typography>
           </div>
 
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1.5">
             {day.exercises.map((exercise) => {
               const key = `${day.day}:${exercise.exerciseId}`;
               const isEditing = editingKey === key;
@@ -237,11 +254,7 @@ const ProgramReview = ({
                 <div
                   key={key}
                   className="flex items-center gap-3 p-2 rounded-lg"
-                  style={
-                    exercise.source === "new"
-                      ? { backgroundColor: "hsl(var(--primary) / 0.10)" }
-                      : undefined
-                  }
+                  style={ROW_STYLES[exercise.source] || ROW_STYLES.existing}
                 >
                   {exercise.exerciseGif ? (
                     <img
@@ -301,7 +314,7 @@ const ProgramReview = ({
                       <button
                         onClick={() => startEdit(day.day, exercise)}
                         aria-label={`Edit ${exercise.exerciseName}`}
-                        className="p-1 rounded hover:bg-black/5 shrink-0"
+                        className="p-1 rounded hover:bg-muted shrink-0"
                       >
                         <Pencil size={14} />
                       </button>
@@ -310,7 +323,7 @@ const ProgramReview = ({
                           removeExercise(day.day, exercise.exerciseId)
                         }
                         aria-label={`Remove ${exercise.exerciseName}`}
-                        className="p-1 rounded hover:bg-black/5 shrink-0"
+                        className="p-1 rounded hover:bg-muted shrink-0"
                       >
                         <X size={14} />
                       </button>

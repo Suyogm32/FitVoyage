@@ -1,8 +1,10 @@
+"use client";
 import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/api/Authprovider/Authprovider";
-import { Button, Stack, Typography } from "@mui/material";
+import { Stack, Typography, Chip } from "@mui/material";
+import { PlusCircle } from "lucide-react";
 
 const ExerciseCard = ({ exercise, setAddExer }) => {
   const { user } = useAuth();
@@ -17,73 +19,51 @@ const ExerciseCard = ({ exercise, setAddExer }) => {
   };
 
   return (
-    <div className="exercise-card bg-white rounded-lg w-[300px]">
+    <div className="exercise-card bg-card text-card-foreground border border-border rounded-lg w-full h-full flex flex-col overflow-hidden">
       <Link href={`/exercise/${exercise.id}`}>
+        {/* Explicit white behind the gif — these images are dark line art on
+            a transparent background, so they vanish on a dark surface. */}
         <img
           src={exercise.gifUrl}
           alt={exercise.name}
           loading="lazy"
-          className="rounded-lg"
+          className="rounded-t-lg bg-white w-full"
         />
       </Link>
+
       <Stack
-        direction={"row"}
-        justifyContent={"space-between"}
-        borderRadius={"50%"}
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        className="px-3 pt-3"
       >
-        <div>
-          <Button
-            sx={{
-              ml: "20px",
-              color: "#fff",
-              background: "#ffa9a9",
-              fontSize: "12px",
-              borderRadius: "20px",
-              textTransform: "capitalize",
-            }}
-          >
-            {exercise.bodyPart}
-          </Button>
-          <Button
-            sx={{
-              ml: "20px",
-              color: "#fff",
-              background: "#fcc757",
-              fontSize: "12px",
-              borderRadius: "20px",
-              textTransform: "capitalize",
-            }}
-          >
-            {exercise.target}
-          </Button>
+        <div className="flex gap-2 flex-wrap">
+          <Chip
+            label={exercise.bodyPart}
+            size="small"
+            sx={{ textTransform: "capitalize" }}
+          />
+          <Chip
+            label={exercise.target}
+            size="small"
+            variant="outlined"
+            sx={{ textTransform: "capitalize" }}
+          />
         </div>
-        <button className="mr-4" onClick={handleClick}>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="red"
-            className="w-8 h-8"
-          >
-            <path
-              fillRule="evenodd"
-              d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 9a.75.75 0 0 0-1.5 0v2.25H9a.75.75 0 0 0 0 1.5h2.25V15a.75.75 0 0 0 1.5 0v-2.25H15a.75.75 0 0 0 0-1.5h-2.25V9Z"
-              clipRule="evenodd"
-            />
-          </svg>
+        <button
+          onClick={handleClick}
+          aria-label={`Add ${exercise.name} to schedule`}
+        >
+          <PlusCircle size={28} style={{ color: "hsl(var(--primary))" }} />
         </button>
       </Stack>
-      <Link
-        href={`/exercise/${exercise.id}`}
-        className="exercise-card bg-white rounded-lg"
-      >
+
+      <Link href={`/exercise/${exercise.id}`}>
         <Typography
-          ml={"20px"}
-          color={"#000"}
-          fontWeight={"bold"}
-          mt={"10px"}
-          p={"10px"}
-          textTransform={"capitalize"}
-          fontSize={"20px"}
+          className="px-3 py-3"
+          fontWeight="bold"
+          textTransform="capitalize"
+          fontSize="18px"
         >
           {exercise.name}
         </Typography>

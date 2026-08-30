@@ -40,14 +40,16 @@ const SearchExercises = ({ setExercises, bodyPart, setBodyPart }) => {
           <h1 className="font-semibold">Should Know</h1>
         </>
       )}
-      <div className=" flex mt-8 justify-center gap-2">
+      <div className="flex mt-8 justify-center gap-2 w-full max-w-3xl px-4">
         <TextField
           sx={{
-            input: { fontWeight: "700", border: "none", borderRadius: "5px" },
-            width: { lg: "1170px", xs: "250px", md: "600px" },
-            backgroundColor: "#fff",
+            flex: 1,
+            "& .MuiInputBase-input": { fontWeight: 600 },
+            "& .MuiOutlinedInput-root": {
+              backgroundColor: "hsl(var(--card))",
+              borderRadius: "10px",
+            },
           }}
-          height="76px"
           value={search}
           placeholder="Search for Exercises"
           onChange={(e) => {

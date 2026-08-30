@@ -1,19 +1,9 @@
 "use client";
 import React, { useState } from "react";
-import styled from "styled-components";
 import { Button, Typography } from "@mui/material";
+import { X } from "lucide-react";
 import apiClient from "@/lib/apiClient";
 import EditExerciseModal from "./EditExerciseModal";
-
-const CardGrid = styled.div`
-  display: grid;
-  grid-template-columns: 0.5fr 1.5fr;
-  gap: 10px;
-  background-color: "#F8D8D6";
-  width: auto;
-  padding: 10px;
-  border-radius: 10px;
-`;
 
 const ScheduleExerciseCard = ({ exercise, day, onChanged }) => {
   const [removing, setRemoving] = useState(false);
@@ -36,20 +26,24 @@ const ScheduleExerciseCard = ({ exercise, day, onChanged }) => {
 
   return (
     <>
-      <CardGrid className="bg-mybg mb-2 gap-5">
+      {/* bg-muted rather than bg-card — nested inside a card, it needs to
+          read as a distinct surface in both light and dark. */}
+      <div className="grid grid-cols-[0.5fr_1.5fr] gap-3 p-2.5 rounded-lg bg-muted">
         <div className="flex justify-center items-center">
           <img
             src={exercise.exerciseGif}
             alt={exercise.exerciseName}
-            className="rounded-md"
+            className="rounded-md bg-white"
           />
         </div>
         <div className="flex flex-col gap-1">
-          <Typography textTransform={"capitalize"}>
+          <Typography textTransform="capitalize">
             {exercise.exerciseName}
           </Typography>
-          <Typography>Sets - {exercise.numberOfSets}</Typography>
-          <Typography>
+          <Typography variant="body2">
+            Sets - {exercise.numberOfSets}
+          </Typography>
+          <Typography variant="body2">
             Targets -{" "}
             {Array.isArray(exercise.targetReps)
               ? exercise.targetReps.join(", ")
@@ -57,9 +51,10 @@ const ScheduleExerciseCard = ({ exercise, day, onChanged }) => {
             reps
           </Typography>
           {exercise.usesWeight && (
-            <Typography>
+            <Typography variant="body2">
               Weight -{" "}
-              {Array.isArray(exercise.targetWeight)
+              {Array.isArray(exercise.targetWeight) &&
+              exercise.targetWeight.length
                 ? exercise.targetWeight.join(", ")
                 : "not set"}{" "}
               {exercise.weightUnit || "kg"}
@@ -69,25 +64,12 @@ const ScheduleExerciseCard = ({ exercise, day, onChanged }) => {
             <Button size="small" onClick={() => setEditing(true)}>
               Edit
             </Button>
-            <Button onClick={removeExercise} disabled={removing}>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="red"
-                className="w-6 h-6"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                />
-              </svg>
+            <Button size="small" onClick={removeExercise} disabled={removing}>
+              <X size={18} />
             </Button>
           </div>
         </div>
-      </CardGrid>
+      </div>
 
       {editing && (
         <EditExerciseModal

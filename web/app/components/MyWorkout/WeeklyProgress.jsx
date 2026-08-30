@@ -3,10 +3,9 @@ import React from "react";
 import { Typography } from "@mui/material";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
+import { cardClass } from "@/lib/styles";
 
 dayjs.extend(customParseFormat);
-
-const cardClass = "bg-card rounded-xl shadow-sm border border-black/5";
 const textMuted = { color: "hsl(var(--muted-foreground))" };
 
 const DAY_LABELS = {

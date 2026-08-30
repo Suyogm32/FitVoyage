@@ -18,7 +18,7 @@ module.exports = {
     },
     extend: {
       colors: {
-        mybg: "#F8D8D6",
+        mybg: "hsl(var(--background))",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -52,6 +52,18 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+      },
+      success: {
+        DEFAULT: "hsl(var(--success))",
+        foreground: "hsl(var(--success-foreground))",
+      },
+      info: {
+        DEFAULT: "hsl(var(--info))",
+        foreground: "hsl(var(--info-foreground))",
+      },
+      warning: {
+        DEFAULT: "hsl(var(--warning))",
+        foreground: "hsl(var(--warning-foreground))",
       },
       borderRadius: {
         lg: "var(--radius)",

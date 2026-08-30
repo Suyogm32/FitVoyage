@@ -1,17 +1,10 @@
 "use client";
 import React, { useState } from "react";
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  Typography,
-  Stack,
-} from "@mui/material";
+import { Button, TextField, Typography } from "@mui/material";
+import { Search } from "lucide-react";
 import apiClient from "@/lib/apiClient";
 import { usesWeightEquipment } from "@/app/utils/weightedEquipment";
+import SidePanel from "@/app/components/SidePanel";
 
 const AdHocLogModal = ({ date, day, onClose, onSaved }) => {
   const [query, setQuery] = useState("");
@@ -87,80 +80,107 @@ const AdHocLogModal = ({ date, day, onClose, onSaved }) => {
   };
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Log an extra exercise</DialogTitle>
-      <DialogContent>
-        {!selected ? (
-          <Stack gap={2} mt={1}>
-            <Stack direction="row" gap={1}>
+    <SidePanel
+      title="Log an extra exercise"
+      subtitle={selected?.name}
+      onClose={onClose}
+      footer={
+        <>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button
+            variant="contained"
+            color="error"
+            disabled={!selected || saving}
+            onClick={handleSave}
+          >
+            {saving ? "Saving..." : "Log it"}
+          </Button>
+        </>
+      }
+    >
+      {!selected ? (
+        <div className="flex flex-col gap-3">
+          <div className="flex gap-2">
+            <TextField
+              label="Search exercises"
+              size="small"
+              fullWidth
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && runSearch()}
+            />
+            <Button
+              onClick={runSearch}
+              disabled={searching}
+              aria-label="Search"
+            >
+              <Search size={18} />
+            </Button>
+          </div>
+
+          {results.map((ex) => (
+            <button
+              key={ex.id}
+              onClick={() => setSelected(ex)}
+              className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted text-left w-full"
+            >
+              <img
+                src={ex.gifUrl}
+                alt=""
+                className="w-12 h-12 rounded bg-white shrink-0"
+              />
+              <div className="min-w-0">
+                <Typography variant="body2" textTransform="capitalize" noWrap>
+                  {ex.name}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  textTransform="capitalize"
+                >
+                  {ex.bodyPart} · {ex.equipment}
+                </Typography>
+              </div>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {sets.map((s, i) => (
+            <div key={i} className="flex gap-2 items-center">
               <TextField
-                label="Search exercises"
+                label={`Set ${i + 1} reps`}
+                type="number"
                 size="small"
                 fullWidth
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && runSearch()}
+                inputProps={{ min: 0 }}
+                value={s.reps}
+                onChange={(e) => updateSet(i, "reps", e.target.value)}
               />
-              <Button onClick={runSearch} disabled={searching}>
-                {searching ? "..." : "Search"}
-              </Button>
-            </Stack>
-            {results.map((ex) => (
-              <div
-                key={ex.id}
-                onClick={() => setSelected(ex)}
-                className="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-black/5"
-              >
-                <img
-                  src={ex.gifUrl}
-                  alt={ex.name}
-                  className="w-12 h-12 rounded"
-                />
-                <div>
-                  <Typography textTransform="capitalize">{ex.name}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {ex.bodyPart} · {ex.equipment}
-                  </Typography>
-                </div>
-              </div>
-            ))}
-          </Stack>
-        ) : (
-          <Stack gap={2} mt={1}>
-            <Typography textTransform="capitalize" variant="h6">
-              {selected.name}
-            </Typography>
-            {sets.map((s, i) => (
-              <Stack key={i} direction="row" gap={1} alignItems="center">
+              {tracksWeight && (
                 <TextField
-                  label={`Set ${i + 1} reps`}
+                  label="Weight (kg)"
                   type="number"
                   size="small"
-                  fullWidth
-                  value={s.reps}
-                  onChange={(e) => updateSet(i, "reps", e.target.value)}
+                  placeholder="start light"
+                  inputProps={{ step: 0.5, min: 0 }}
+                  value={s.weight}
+                  onChange={(e) => updateSet(i, "weight", e.target.value)}
+                  sx={{ width: 130 }}
                 />
-                {tracksWeight && (
-                  <TextField
-                    label="Weight (kg)"
-                    type="number"
-                    size="small"
-                    inputProps={{ step: 0.5, min: 0 }}
-                    value={s.weight}
-                    onChange={(e) => updateSet(i, "weight", e.target.value)}
-                    sx={{ width: 140 }}
-                  />
-                )}
-                {sets.length > 1 && (
-                  <Button
-                    size="small"
-                    onClick={() => setSets(sets.filter((_, idx) => idx !== i))}
-                  >
-                    Remove
-                  </Button>
-                )}
-              </Stack>
-            ))}
+              )}
+              {sets.length > 1 && (
+                <Button
+                  size="small"
+                  onClick={() => setSets(sets.filter((_, idx) => idx !== i))}
+                >
+                  Remove
+                </Button>
+              )}
+            </div>
+          ))}
+
+          <div className="flex gap-2">
             <Button
               size="small"
               onClick={() => setSets([...sets, { reps: "", weight: "" }])}
@@ -170,21 +190,16 @@ const AdHocLogModal = ({ date, day, onClose, onSaved }) => {
             <Button size="small" onClick={() => setSelected(null)}>
               Pick a different exercise
             </Button>
-          </Stack>
-        )}
-        {error && <Typography color="error">{error}</Typography>}
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button
-          variant="contained"
-          disabled={!selected || saving}
-          onClick={handleSave}
-        >
-          {saving ? "Saving..." : "Log it"}
-        </Button>
-      </DialogActions>
-    </Dialog>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <Typography color="error" className="mt-3">
+          {error}
+        </Typography>
+      )}
+    </SidePanel>
   );
 };
 

@@ -1,18 +1,7 @@
 "use client";
 import React, { useState } from "react";
-import styled from "styled-components";
 import { Button, Typography, Chip } from "@mui/material";
 import { useDraggable } from "@dnd-kit/core";
-
-const CardGrid = styled.div`
-  display: grid;
-  grid-template-columns: 0.5fr 1.5fr;
-  gap: 10px;
-  background-color: "#F8D8D6";
-  width: auto;
-  padding: 10px;
-  border-radius: 10px;
-`;
 
 const statusColor = {
   incomplete: "default",
@@ -100,9 +89,9 @@ const WorkoutCard = ({
       ref={setNodeRef}
       style={style}
       {...(draggable ? { ...attributes, ...listeners } : {})}
-      className="bg-mybg mb-2 gap-5"
+      className="mb-2"
     >
-      <CardGrid className="bg-mybg mb-2 gap-5">
+      <div className="grid grid-cols-[0.5fr_1.5fr] gap-3 p-2.5 rounded-lg bg-muted">
         <div className="flex justify-center items-center">
           <img
             src={exercise.exerciseGif}
@@ -177,7 +166,7 @@ const WorkoutCard = ({
               <Button
                 type="button"
                 onClick={() => onLog(exercise)}
-                className="bg-white rounded-lg"
+                className="rounded-lg"
               >
                 Log Sets
               </Button>
@@ -185,14 +174,14 @@ const WorkoutCard = ({
               <Button
                 type="button"
                 onClick={() => onEdit(exercise)}
-                className="bg-white rounded-lg"
+                className="rounded-lg"
               >
                 Edit
               </Button>
             )}
           </div>
         </div>
-      </CardGrid>
+      </div>
     </div>
   );
 };

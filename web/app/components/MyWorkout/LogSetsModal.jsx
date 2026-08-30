@@ -1,15 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  Typography,
-  Stack,
-} from "@mui/material";
+import { Button, TextField, Typography } from "@mui/material";
+import SidePanel from "@/app/components/SidePanel";
 
 const FEEL_OPTIONS = [
   { value: "easy", label: "Easy" },
@@ -99,80 +91,86 @@ const LogSetsModal = ({ exercise, coachMode, onSave, onClose }) => {
   };
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle textTransform="capitalize">
-        {exercise.exerciseName}
-      </DialogTitle>
-      <DialogContent>
-        {!hasTargets ? (
-          <Typography color="error">
-            This exercise doesn&apos;t have set targets saved. Remove it from
-            your schedule and re-add it before logging sets.
-          </Typography>
-        ) : (
-          <Stack gap={2} mt={1}>
-            {exercise.targetReps.map((target, i) => (
-              <Stack key={i} direction="row" gap={1} alignItems="center">
+    <SidePanel
+      title="Log your sets"
+      subtitle={exercise.exerciseName}
+      onClose={onClose}
+      footer={
+        <>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button
+            variant="contained"
+            color="error"
+            disabled={!hasTargets || saving}
+            onClick={handleSave}
+          >
+            {saving ? "Saving..." : "Save"}
+          </Button>
+        </>
+      }
+    >
+      {!hasTargets ? (
+        <Typography color="error">
+          This exercise doesn&apos;t have set targets saved. Remove it from your
+          schedule and re-add it before logging sets.
+        </Typography>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {exercise.targetReps.map((target, i) => (
+            <div key={i} className="flex gap-2 items-center">
+              <TextField
+                label={`Set ${i + 1} — target ${target}`}
+                type="number"
+                size="small"
+                fullWidth
+                value={reps[i] ?? ""}
+                onChange={(e) => handleRepChange(i, e.target.value)}
+              />
+              {tracksWeight && (
                 <TextField
-                  label={`Set ${i + 1} — target ${target}`}
+                  label={`Weight (${unit})`}
                   type="number"
                   size="small"
-                  value={reps[i] ?? ""}
-                  onChange={(e) => handleRepChange(i, e.target.value)}
-                  fullWidth
+                  placeholder="start light"
+                  inputProps={{ step: 0.5, min: 0 }}
+                  value={weights[i] ?? ""}
+                  onChange={(e) => handleWeightChange(i, e.target.value)}
+                  sx={{ width: 130 }}
                 />
-                {tracksWeight && (
-                  <TextField
-                    label={`Weight (${unit})`}
-                    type="number"
-                    size="small"
-                    placeholder="start light"
-                    inputProps={{ step: 0.5, min: 0 }}
-                    value={weights[i] ?? ""}
-                    onChange={(e) => handleWeightChange(i, e.target.value)}
-                    sx={{ width: 140 }}
-                  />
-                )}
-                <Button size="small" onClick={() => handleRepChange(i, 0)}>
-                  Skip
-                </Button>
-              </Stack>
-            ))}
+              )}
+              <Button size="small" onClick={() => handleRepChange(i, 0)}>
+                Skip
+              </Button>
+            </div>
+          ))}
 
-            {coachMode && (
-              <div>
-                <Typography variant="body2" className="mb-2">
-                  How did that feel?
-                </Typography>
-                <Stack direction="row" gap={1}>
-                  {FEEL_OPTIONS.map((option) => (
-                    <Button
-                      key={option.value}
-                      size="small"
-                      color="error"
-                      variant={feel === option.value ? "contained" : "outlined"}
-                      onClick={() => setFeel(option.value)}
-                    >
-                      {option.label}
-                    </Button>
-                  ))}
-                </Stack>
+          {coachMode && (
+            <div className="mt-2">
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                className="mb-2"
+              >
+                How did that feel?
+              </Typography>
+              <div className="flex gap-2">
+                {FEEL_OPTIONS.map((option) => (
+                  <Button
+                    key={option.value}
+                    size="small"
+                    color="error"
+                    variant={feel === option.value ? "contained" : "outlined"}
+                    onClick={() => setFeel(option.value)}
+                  >
+                    {option.label}
+                  </Button>
+                ))}
               </div>
-            )}
-          </Stack>
-        )}
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button
-          variant="contained"
-          disabled={!hasTargets || saving}
-          onClick={handleSave}
-        >
-          {saving ? "Saving..." : "Save"}
-        </Button>
-      </DialogActions>
-    </Dialog>
+            </div>
+          )}
+        </div>
+      )}
+    </SidePanel>
   );
 };
 

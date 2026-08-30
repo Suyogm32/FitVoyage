@@ -3,6 +3,13 @@ import { ExerciseDB } from "../models/ExerciseDB.js";
 
 const router = Router();
 
+// Escaping metacharacters so a search like "a+b" or "(chest)" isn't parsed
+// as a pattern. Shared by the search and browse handlers.
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const DEFAULT_LIMIT = 12;
+const MAX_LIMIT = 48;
+
 // GET /api/exercisedb?id=...  or  ?search=...  or  /api/exercisedb  (all)
 router.get("/", async (req, res) => {
   try {
@@ -37,6 +44,58 @@ router.get("/", async (req, res) => {
     return res.json(exercises);
   } catch (error) {
     res.status(500).json({ message: "Error in fetching all exercises", error });
+  }
+});
+
+// GET /api/exercisedb/browse?search=&bodyPart=&equipment=&page=1&limit=12
+// Purpose-built for the browse screen: one query, one shape, and the client
+// never receives more than a page of records.
+router.get("/browse", async (req, res) => {
+  try {
+    const { search, bodyPart, equipment } = req.query;
+
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(
+      MAX_LIMIT,
+      Math.max(1, Number(req.query.limit) || DEFAULT_LIMIT),
+    );
+
+    const filter = {};
+    if (bodyPart && bodyPart !== "all") filter.bodyPart = bodyPart;
+    if (equipment && equipment !== "all") filter.equipment = equipment;
+
+    const trimmed = (search || "").trim();
+    if (trimmed) {
+      const regex = new RegExp(escapeRegex(trimmed), "i");
+      filter.$or = [
+        { name: regex },
+        { target: regex },
+        { equipment: regex },
+        { bodyPart: regex },
+      ];
+    }
+
+    // skip/limit is only correct over a total order — sorting by name alone
+    // would let two exercises with the same name swap places between
+    // queries, so a record could appear on two pages or none. id breaks ties.
+    const [items, total] = await Promise.all([
+      ExerciseDB.find(filter)
+        .sort({ name: 1, id: 1 })
+        .skip((page - 1) * limit)
+        .limit(limit),
+      ExerciseDB.countDocuments(filter),
+    ]);
+
+    res.json({
+      items,
+      total,
+      page,
+      pages: Math.max(1, Math.ceil(total / limit)),
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error browsing exercises", error: error.message });
   }
 });
 

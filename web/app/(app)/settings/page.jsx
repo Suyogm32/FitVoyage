@@ -13,8 +13,8 @@ import {
 } from "@mui/material";
 import apiClient from "@/lib/apiClient";
 import { useUserProfile } from "@/lib/useUserProfile";
+import { cardClass } from "@/lib/styles";
 
-const cardClass = "bg-card rounded-xl shadow-sm border border-black/5";
 const textMuted = { color: "hsl(var(--muted-foreground))" };
 
 const GOALS = [

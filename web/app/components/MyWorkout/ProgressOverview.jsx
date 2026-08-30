@@ -2,9 +2,9 @@
 import React, { useState } from "react";
 import { Typography, Button } from "@mui/material";
 import GoalsModal from "./GoalsModal";
+import { cardClass } from "@/lib/styles";
 
 const textMuted = { color: "hsl(var(--muted-foreground))" };
-const cardClass = "bg-card rounded-xl shadow-sm border border-black/5";
 
 const RANGES = [
   { key: "week", label: "Week" },

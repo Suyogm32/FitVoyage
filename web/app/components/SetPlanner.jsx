@@ -1,22 +1,27 @@
 "use client";
 import React from "react";
-import { Typography } from "@mui/material";
+import {
+  Typography,
+  TextField,
+  MenuItem,
+  FormControlLabel,
+  Checkbox,
+} from "@mui/material";
 
-// Controlled sets/reps/weight planner, shared by AddExeForm (creating a
-// schedule entry) and EditExerciseModal (versioned edit of one). Owns no
-// state — the parent holds `plan` and receives a whole new plan object on
-// every change.
-//
-// plan: { numberOfSets, targetReps[], usesWeight, targetWeight[], weightUnit }
+// Controlled sets/reps/weight planner, shared by AddExeForm and
+// EditExerciseModal. Owns no state — the parent holds `plan` and receives a
+// whole new plan object on every change.
 const SetPlanner = ({ plan, onChange }) => {
   const { numberOfSets, targetReps, usesWeight, targetWeight, weightUnit } =
     plan;
 
   const patch = (changes) => onChange({ ...plan, ...changes });
 
-  // Resizes both arrays to match the new set count, keeping existing values.
   const handleSetsChange = (e) => {
-    const newCount = Math.max(0, parseInt(e.target.value, 10) || 0);
+    const newCount = Math.max(
+      0,
+      Math.min(10, parseInt(e.target.value, 10) || 0),
+    );
     patch({
       numberOfSets: newCount,
       targetReps: Array.from(
@@ -53,66 +58,79 @@ const SetPlanner = ({ plan, onChange }) => {
   };
 
   return (
-    <div className="flex flex-col gap-4 w-full">
-      <input
+    <div className="flex flex-col gap-4">
+      <TextField
+        label="Number of sets"
         type="number"
-        name="Sets"
-        min="0"
-        placeholder="Number of Sets"
+        size="small"
+        fullWidth
+        inputProps={{ min: 0, max: 10 }}
         value={numberOfSets}
         onChange={handleSetsChange}
-        className="p-4 py-2"
       />
 
       {numberOfSets > 0 && (
-        <div className="flex flex-col gap-2 w-full">
-          <Typography variant="body2">Target reps for each set</Typography>
+        <div className="flex flex-col gap-3">
+          <Typography variant="body2" color="text.secondary">
+            Target reps for each set
+          </Typography>
           {Array.from({ length: numberOfSets }).map((_, i) => (
-            <input
+            <TextField
               key={i}
+              label={`Set ${i + 1}`}
               type="number"
-              min="0"
-              placeholder={`Set ${i + 1} target reps`}
+              size="small"
+              fullWidth
+              inputProps={{ min: 0 }}
               value={targetReps[i] ?? 0}
               onChange={(e) => handleTargetRepChange(i, e.target.value)}
-              className="p-4 py-2 w-full"
             />
           ))}
         </div>
       )}
 
-      <label className="flex items-center gap-2 w-full">
-        <input
-          type="checkbox"
-          checked={usesWeight}
-          onChange={handleUsesWeightToggle}
-        />
-        <Typography variant="body2">Track weight for this exercise</Typography>
-      </label>
+      <FormControlLabel
+        control={
+          <Checkbox
+            color="error"
+            checked={usesWeight}
+            onChange={handleUsesWeightToggle}
+          />
+        }
+        label={
+          <Typography variant="body2">
+            Track weight for this exercise
+          </Typography>
+        }
+      />
 
       {usesWeight && numberOfSets > 0 && (
-        <div className="flex flex-col gap-2 w-full">
-          <div className="flex items-center justify-between w-full">
-            <Typography variant="body2">Target weight for each set</Typography>
-            <select
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <Typography variant="body2" color="text.secondary">
+              Target weight for each set
+            </Typography>
+            <TextField
+              select
+              size="small"
               value={weightUnit}
               onChange={(e) => patch({ weightUnit: e.target.value })}
-              className="p-2"
+              sx={{ width: 90 }}
             >
-              <option value="kg">kg</option>
-              <option value="lb">lb</option>
-            </select>
+              <MenuItem value="kg">kg</MenuItem>
+              <MenuItem value="lb">lb</MenuItem>
+            </TextField>
           </div>
           {Array.from({ length: numberOfSets }).map((_, i) => (
-            <input
+            <TextField
               key={i}
+              label={`Set ${i + 1} (${weightUnit})`}
               type="number"
-              min="0"
-              step="0.5"
-              placeholder={`Set ${i + 1} target weight (${weightUnit})`}
+              size="small"
+              fullWidth
+              inputProps={{ step: 0.5, min: 0 }}
               value={targetWeight[i] ?? 0}
               onChange={(e) => handleTargetWeightChange(i, e.target.value)}
-              className="p-4 py-2 w-full"
             />
           ))}
         </div>

@@ -1,15 +1,9 @@
 "use client";
 import React, { useState } from "react";
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Typography,
-} from "@mui/material";
+import { Button, Typography } from "@mui/material";
 import apiClient from "@/lib/apiClient";
 import SetPlanner from "@/app/components/SetPlanner";
+import SidePanel from "@/app/components/SidePanel";
 
 const EditExerciseModal = ({ exercise, day, onClose, onSaved }) => {
   const [plan, setPlan] = useState({
@@ -43,25 +37,37 @@ const EditExerciseModal = ({ exercise, day, onClose, onSaved }) => {
   };
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle textTransform="capitalize">
-        {exercise.exerciseName}
-      </DialogTitle>
-      <DialogContent>
-        <Typography variant="body2" className="mb-3">
-          Changes apply from today onward — past workouts keep the targets they
-          were logged against.
+    <SidePanel
+      title="Edit exercise"
+      subtitle={exercise.exerciseName}
+      onClose={onClose}
+      footer={
+        <>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button
+            variant="contained"
+            color="error"
+            disabled={submitting || !plan.numberOfSets}
+            onClick={handleSave}
+          >
+            {submitting ? "Saving..." : "Save"}
+          </Button>
+        </>
+      }
+    >
+      <Typography variant="body2" color="text.secondary" className="mb-4">
+        Changes apply from today onward — past workouts keep the targets they
+        were logged against.
+      </Typography>
+
+      <SetPlanner plan={plan} onChange={setPlan} />
+
+      {error && (
+        <Typography color="error" className="mt-3">
+          {error}
         </Typography>
-        <SetPlanner plan={plan} onChange={setPlan} />
-        {error && <Typography color="error">{error}</Typography>}
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" disabled={submitting} onClick={handleSave}>
-          {submitting ? "Saving..." : "Save"}
-        </Button>
-      </DialogActions>
-    </Dialog>
+      )}
+    </SidePanel>
   );
 };
 
