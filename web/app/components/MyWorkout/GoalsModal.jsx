@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Button, TextField, Typography, Stack } from "@mui/material";
 import apiClient from "@/lib/apiClient";
 import SidePanel from "@/app/components/SidePanel";
+import { useToast } from "@/app/components/ToastProvider";
 
 const GoalsModal = ({ weeklyGoals = [], onClose, onSaved }) => {
   const [bodyParts, setBodyParts] = useState([]);
@@ -10,7 +11,7 @@ const GoalsModal = ({ weeklyGoals = [], onClose, onSaved }) => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const seeded = useRef(false);
-
+  const toast = useToast();
   // Seed once from the prop. Callers pass weeklyGoals inline, so the array
   // identity changes every parent render — depending on it would refetch the
   // body-part list forever and stomp on whatever the user had typed.
@@ -42,6 +43,7 @@ const GoalsModal = ({ weeklyGoals = [], onClose, onSaved }) => {
     if (saving) return;
     setSaving(true);
     setError("");
+    let succeeded = false;
     try {
       const payload = Object.entries(targets)
         .map(([bodyPart, targetSets]) => ({
@@ -51,13 +53,17 @@ const GoalsModal = ({ weeklyGoals = [], onClose, onSaved }) => {
         .filter((g) => g.targetSets > 0);
 
       await apiClient.patch("/api/user", { weeklyGoals: payload });
-      onSaved?.();
-      onClose();
+      succeeded = true;
     } catch (err) {
       console.error("Error saving goals:", err);
       setError("Failed to save your goals. Please try again.");
     } finally {
       setSaving(false);
+    }
+    if (succeeded) {
+      toast.success("Weekly goals saved");
+      onSaved?.();
+      onClose();
     }
   };
 

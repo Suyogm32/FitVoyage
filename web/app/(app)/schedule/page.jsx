@@ -1,11 +1,9 @@
 "use client";
-import React, { useState, useCallback } from "react";
-import SearchExercises from "@/app/components/homeComponents/SearchExercise/SearchExercises";
-import ScheduleStack from "@/app/components/ScheduleComponent/ScheduleStack";
+import React, { Suspense, useState, useCallback } from "react";
+import ExerciseBrowser from "@/app/components/exercises/ExerciseBrowser";
 import ExerSchedule from "./ExerSchedule";
 
-const page = () => {
-  const [exercises, setExercises] = useState([]);
+const Page = () => {
   const [updateTrigger, setUpdateTrigger] = useState(0);
 
   const triggerUpdate = useCallback(() => {
@@ -13,16 +11,17 @@ const page = () => {
   }, []);
 
   return (
-    <>
-      <SearchExercises setExercises={setExercises} />
-      <ScheduleStack
-        exercises={exercises}
-        setExercises={setExercises}
-        onScheduleChange={triggerUpdate}
-      />
+    <div className="flex flex-col gap-8">
+      {/* Same browser as /exercises, in compact mode: search only, results
+          appear once you type. Replaces SearchExercises + ScheduleStack,
+          which fetched the whole catalogue and paginated in the browser. */}
+      <Suspense fallback={null}>
+        <ExerciseBrowser compact onScheduleChange={triggerUpdate} />
+      </Suspense>
+
       <ExerSchedule updateTrigger={updateTrigger} />
-    </>
+    </div>
   );
 };
 
-export default page;
+export default Page;

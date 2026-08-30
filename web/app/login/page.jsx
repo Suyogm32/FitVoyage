@@ -10,7 +10,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      router.push("/");
+      router.push("/progress");
     }
   }, [user, loading, router]);
 
@@ -18,11 +18,5 @@ export default function LoginPage() {
     return null;
   }
 
-  return (
-    <div className="bg-LoginBackCol text-black w-screen h-screen flex flex-col justify-center items-center gap-2">
-      <div className="w-auto">
-        <Login />
-      </div>
-    </div>
-  );
+  return <Login />;
 }

@@ -1,29 +1,50 @@
-import React from "react";
-import { Box, Stack, Typography } from "@mui/material";
-import ExerciseCard from "../homeComponents/Exercise/ExerciseCard";
+"use client";
+import React, { useState } from "react";
+import { Typography } from "@mui/material";
 import HorizontalScrollForExercises from "./HorizontalScrollForExercises";
+import AddExercise from "@/app/AddExercise/AddExercise";
 
-const SimilarExercises = ({ targetMuscleExercises, equipmentExercises }) => {
+const Section = ({ label, highlight, exercises, setAddExer }) => {
+  if (!exercises?.length) return null;
   return (
-    <Box sx={{ mt: { lg: "100px", sx: "10px" } }}>
-      <Typography variant="h4" mb={"20px"}>
-        Similar <span style={{ color: "#ff2625" }}>Target Muscle</span>{" "}
+    <section className="mb-12">
+      <Typography variant="h5" className="mb-5">
+        {label}{" "}
+        <span style={{ color: "hsl(var(--primary))" }}>{highlight}</span>{" "}
         Exercises
       </Typography>
-      <Stack direction={"row"} sx={{ p: "2", position: "relative" }}>
-        {targetMuscleExercises?.length > 0 && (
-          <HorizontalScrollForExercises exerciseData={targetMuscleExercises} />
-        )}
-      </Stack>
-      <Typography variant="h4" mb={"20px"}>
-        Similar <span style={{ color: "#ff2625" }}>Equipment</span> Exercises
-      </Typography>
-      <Stack direction={"row"} sx={{ p: "2", position: "relative" }}>
-        {equipmentExercises?.length > 0 && (
-          <HorizontalScrollForExercises exerciseData={equipmentExercises} />
-        )}
-      </Stack>
-    </Box>
+      <HorizontalScrollForExercises
+        exerciseData={exercises}
+        setAddExer={setAddExer}
+      />
+    </section>
+  );
+};
+
+const SimilarExercises = ({ targetMuscleExercises, equipmentExercises }) => {
+  // The rails render ExerciseCard, whose "+" calls setAddExer. It was never
+  // passed down here, so clicking it threw.
+  const [addExer, setAddExer] = useState(null);
+
+  return (
+    <div className="mt-16">
+      <Section
+        label="Similar"
+        highlight="Target Muscle"
+        exercises={targetMuscleExercises}
+        setAddExer={setAddExer}
+      />
+      <Section
+        label="Similar"
+        highlight="Equipment"
+        exercises={equipmentExercises}
+        setAddExer={setAddExer}
+      />
+
+      {addExer && (
+        <AddExercise exerc={addExer} setShowPopup={() => setAddExer(null)} />
+      )}
+    </div>
   );
 };
 

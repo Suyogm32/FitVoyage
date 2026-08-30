@@ -98,6 +98,30 @@ router.get("/browse", async (req, res) => {
       .json({ message: "Error browsing exercises", error: error.message });
   }
 });
+// GET /api/exercisedb/bodyPart/summary
+// Powers the homepage tiles: one row per body part with a count and a
+// representative image, in a single round trip.
+router.get("/bodyPart/summary", async (req, res) => {
+  try {
+    const rows = await ExerciseDB.aggregate([
+      { $sort: { name: 1 } },
+      {
+        $group: {
+          _id: "$bodyPart",
+          count: { $sum: 1 },
+          gifUrl: { $first: "$gifUrl" },
+        },
+      },
+      { $project: { _id: 0, bodyPart: "$_id", count: 1, gifUrl: 1 } },
+      { $sort: { bodyPart: 1 } },
+    ]);
+    res.json(rows);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error summarising body parts", error: error.message });
+  }
+});
 
 // GET /api/exercisedb/bodyPart?bodyPart=...  or  distinct list of body parts
 router.get("/bodyPart", async (req, res) => {

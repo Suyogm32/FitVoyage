@@ -5,7 +5,6 @@ import { StaticDatePicker } from "@mui/x-date-pickers";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { Box } from "@mui/material";
-import "react-calendar/dist/Calendar.css";
 
 const Calender = ({ setSelectedDate }) => {
   const [value, setValue] = useState(dayjs(new Date()));
@@ -24,8 +23,13 @@ const Calender = ({ setSelectedDate }) => {
       sx={{
         mt: "30px",
         display: "flex",
-        background: "#fff",
-        xs: { alignItems: "center" },
+        // Was "#fff" — a white slab in dark mode. The picker's own surfaces
+        // come from palette.background.paper, which is already --card.
+        backgroundColor: "hsl(var(--card))",
+        color: "hsl(var(--card-foreground))",
+        border: "1px solid hsl(var(--border))",
+        borderRadius: 2,
+        overflow: "hidden",
       }}
     >
       {isClient && (

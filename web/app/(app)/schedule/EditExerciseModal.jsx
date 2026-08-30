@@ -4,6 +4,7 @@ import { Button, Typography } from "@mui/material";
 import apiClient from "@/lib/apiClient";
 import SetPlanner from "@/app/components/SetPlanner";
 import SidePanel from "@/app/components/SidePanel";
+import { useToast } from "@/app/components/ToastProvider";
 
 const EditExerciseModal = ({ exercise, day, onClose, onSaved }) => {
   const [plan, setPlan] = useState({
@@ -15,24 +16,31 @@ const EditExerciseModal = ({ exercise, day, onClose, onSaved }) => {
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const toast = useToast();
 
   const handleSave = async () => {
     if (submitting) return;
     setSubmitting(true);
     setError("");
+    let succeeded = false;
     try {
       await apiClient.patch("/api/saveworkout", {
         day,
         exerciseEntryId: exercise._id,
         updates: plan,
       });
-      onSaved?.();
-      onClose();
+      succeeded = true;
     } catch (err) {
       console.error("Error updating exercise:", err);
       setError("Failed to save changes. Please try again.");
     } finally {
       setSubmitting(false);
+    }
+
+    if (succeeded) {
+      toast.success(`${exercise.exerciseName} updated from today onward`);
+      onSaved?.();
+      onClose();
     }
   };
 

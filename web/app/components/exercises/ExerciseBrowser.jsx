@@ -10,13 +10,18 @@ import { Search, X } from "lucide-react";
 import apiClient from "@/lib/apiClient";
 import ExerciseCard from "@/app/components/homeComponents/Exercise/ExerciseCard";
 import AddExercise from "@/app/AddExercise/AddExercise";
+import { useSearchParams } from "next/navigation";
 
 const PAGE_SIZE = 12;
 
-const ExerciseBrowser = () => {
-  const [input, setInput] = useState("");
-  const [search, setSearch] = useState("");
-  const [bodyPart, setBodyPart] = useState("all");
+// compact: used on /schedule, where this is a "find something to add" box
+// rather than a catalogue. It hides the body-part chips and stays quiet until
+// the user actually types, so the schedule stays the focus of the page.
+const ExerciseBrowser = ({ compact = false, onScheduleChange }) => {
+  const params = useSearchParams();
+  const [input, setInput] = useState(params.get("search") || "");
+  const [search, setSearch] = useState(params.get("search") || "");
+  const [bodyPart, setBodyPart] = useState(params.get("bodyPart") || "all");
   const [page, setPage] = useState(1);
 
   const [bodyParts, setBodyParts] = useState([]);
@@ -26,7 +31,11 @@ const ExerciseBrowser = () => {
 
   const [addExer, setAddExer] = useState(null);
 
+  // In compact mode there are no chips to fill, so the request never goes out.
+  const idle = compact && !search;
+
   useEffect(() => {
+    if (compact) return;
     let cancelled = false;
     apiClient
       .get("/api/exercisedb/bodyPart")
@@ -39,7 +48,7 @@ const ExerciseBrowser = () => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [compact]);
 
   // Debounced so typing doesn't fire a query per keystroke. Page resets here
   // rather than in its own effect — a separate effect would let one stale
@@ -53,6 +62,12 @@ const ExerciseBrowser = () => {
   }, [input]);
 
   useEffect(() => {
+    if (idle) {
+      setResult({ items: [], total: 0, pages: 1 });
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
     setLoading(true);
     setError("");
@@ -63,7 +78,7 @@ const ExerciseBrowser = () => {
           search: search || undefined,
           bodyPart: bodyPart === "all" ? undefined : bodyPart,
           page,
-          limit: PAGE_SIZE,
+          limit: compact ? 8 : PAGE_SIZE,
         },
       })
       .then((res) => {
@@ -88,7 +103,7 @@ const ExerciseBrowser = () => {
     return () => {
       cancelled = true;
     };
-  }, [search, bodyPart, page]);
+  }, [search, bodyPart, page, compact, idle]);
 
   const selectBodyPart = (value) => {
     setBodyPart(value);
@@ -126,7 +141,7 @@ const ExerciseBrowser = () => {
         />
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className={`flex-wrap gap-2 ${compact ? "hidden" : "flex"}`}>
         {bodyParts.map((item) => {
           const active = bodyPart === item;
           return (
@@ -152,18 +167,20 @@ const ExerciseBrowser = () => {
         })}
       </div>
 
-      <Typography variant="body2" color="text.secondary">
-        {loading
-          ? "Loading…"
-          : `${result.total} exercise${result.total === 1 ? "" : "s"}`}
-        {search && !loading ? ` matching "${search}"` : ""}
-      </Typography>
+      {!idle && (
+        <Typography variant="body2" color="text.secondary">
+          {loading
+            ? "Loading…"
+            : `${result.total} exercise${result.total === 1 ? "" : "s"}`}
+          {search && !loading ? ` matching "${search}"` : ""}
+        </Typography>
+      )}
 
       {error && <Typography color="error">{error}</Typography>}
 
-      {loading ? (
+      {idle ? null : loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {Array.from({ length: PAGE_SIZE }).map((_, i) => (
+          {Array.from({ length: compact ? 4 : PAGE_SIZE }).map((_, i) => (
             <div
               key={i}
               className="rounded-lg border border-border bg-card animate-pulse h-[320px]"
@@ -202,7 +219,11 @@ const ExerciseBrowser = () => {
       )}
 
       {addExer && (
-        <AddExercise exerc={addExer} setShowPopup={() => setAddExer(null)} />
+        <AddExercise
+          exerc={addExer}
+          setShowPopup={() => setAddExer(null)}
+          onScheduleChange={onScheduleChange}
+        />
       )}
     </div>
   );

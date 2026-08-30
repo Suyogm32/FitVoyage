@@ -1,22 +1,31 @@
+"use client";
 import React from "react";
-import { Box, Stack, Typography } from "@mui/material";
-const Footer = () => {
-  return (
-    <Box mt={"80px"} bgcolor={"#fff3f3"}>
-      <Stack gap={"40px"} alignItems="center" px={"20px"} pt={"24px"}>
-        <img src={"/images/logo.png"} alt="logo" />
-        <Typography
-          variant="h5"
-          sx={{ fontSize: { lg: "28px", xs: "20px" } }}
-          mt="41px"
-          textAlign="center"
-          pb="40px"
-        >
-          Made with ❤️ by Suyog Mahangade | suyogm32@gmail.com
-        </Typography>
-      </Stack>
-    </Box>
-  );
-};
+import Link from "next/link";
+import Logo from "./Logo";
+
+const Footer = () => (
+  <footer className="border-t border-border mt-auto">
+    <div className="max-w-7xl mx-auto px-4 md:px-8 py-10 flex flex-col md:flex-row items-center justify-between gap-5">
+      <Logo size={28} />
+      <nav className="flex gap-6 text-sm text-muted-foreground">
+        <Link href="/exercises" className="hover:opacity-70">
+          Exercises
+        </Link>
+        <Link href="/login" className="hover:opacity-70">
+          Log in
+        </Link>
+        <Link href="/signup" className="hover:opacity-70">
+          Start free
+        </Link>
+      </nav>
+      <p className="text-sm text-muted-foreground">
+        Built by Suyog Mahangade ·{" "}
+        <a href="mailto:suyogm32@gmail.com" className="hover:opacity-70">
+          suyogm32@gmail.com
+        </a>
+      </p>
+    </div>
+  </footer>
+);
 
 export default Footer;

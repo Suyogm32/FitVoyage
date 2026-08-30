@@ -1,45 +1,47 @@
 "use client";
 import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   createUserWithEmailAndPassword,
   updateProfile,
   sendEmailVerification,
   signOut,
 } from "firebase/auth";
+import { TextField, InputAdornment } from "@mui/material";
+import {
+  Eye,
+  EyeOff,
+  MailCheck,
+  Sparkles,
+  TrendingUp,
+  Wallet,
+} from "lucide-react";
 import { auth } from "@/lib/firebase";
-import { useRouter } from "next/navigation";
-import styled from "styled-components";
-import Link from "next/link";
+import AuthLayout from "@/app/components/AuthLayout";
 
-const SignupGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr;
-  background-color: #fff;
-  border-radius: 10px;
-  margin: 0;
-  top: 0;
-  bottom: 0;
-  @media screen and (min-width: 768px) {
-    grid-template-columns: 0.8fr 1.2fr;
-  }
-  @media screen and (min-width: 900px) {
-    grid-template-columns: 0.7fr 1.3fr;
-  }
-`;
+const PERKS = [
+  { Icon: Wallet, text: "Free to start — no card, no trial countdown" },
+  {
+    Icon: Sparkles,
+    text: "Your first week's program written in about a minute",
+  },
+  {
+    Icon: TrendingUp,
+    text: "Every session logged feeds the next one's targets",
+  },
+];
 
 const FitUser = () => {
-  const initialState = { name: "", email: "", password: "" };
-  const [FitUserDetails, setFitUserDetails] = useState(initialState);
+  const [details, setDetails] = useState({ name: "", email: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [accountCreated, setAccountCreated] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
 
-  const PutAttribute = (e, attribute) => {
-    const newdetails = { ...FitUserDetails };
-    newdetails[attribute] = e.target.value;
-    setFitUserDetails(newdetails);
-  };
+  const setField = (field) => (e) =>
+    setDetails((prev) => ({ ...prev, [field]: e.target.value }));
 
   const saveUser = async (e) => {
     e.preventDefault();
@@ -47,7 +49,7 @@ const FitUser = () => {
     setSubmitting(true);
     setError("");
     try {
-      const { name, email, password } = FitUserDetails;
+      const { name, email, password } = details;
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
@@ -55,13 +57,15 @@ const FitUser = () => {
       );
       await updateProfile(userCredential.user, { displayName: name });
       await sendEmailVerification(userCredential.user);
+      // Signed out on purpose: the account exists but isn't usable until the
+      // email is verified, and staying signed in would imply otherwise.
       await signOut(auth);
       setAccountCreated(true);
-    } catch (error) {
-      console.error("Error creating account:", error);
-      if (error.code === "auth/email-already-in-use") {
+    } catch (err) {
+      console.error("Error creating account:", err);
+      if (err.code === "auth/email-already-in-use") {
         setError("An account with this email already exists.");
-      } else if (error.code === "auth/weak-password") {
+      } else if (err.code === "auth/weak-password") {
         setError("Password should be at least 6 characters.");
       } else {
         setError("Failed to create account. Please try again later.");
@@ -73,81 +77,138 @@ const FitUser = () => {
 
   if (accountCreated) {
     return (
-      <div className="flex flex-col gap-4 justify-center items-center p-8 bg-white rounded-xl">
-        <img
-          src={"/images/logo.png"}
-          alt="logo"
-          className="w-[300px] h-[150px]"
-        />
-        <p className="text-lg text-center">
-          Your account has been created. Please check your email and click the
-          verification link before logging in.
+      <AuthLayout
+        panelHeading={
+          <>
+            One click away.
+            <br />
+            Check your inbox.
+          </>
+        }
+        perks={PERKS}
+      >
+        <span
+          className="w-12 h-12 rounded-xl flex items-center justify-center mb-6"
+          style={{
+            backgroundColor: "hsl(var(--success) / 0.14)",
+            color: "hsl(var(--success))",
+          }}
+        >
+          <MailCheck size={24} />
+        </span>
+
+        <h1 className="text-3xl font-semibold mb-2">Account created</h1>
+        <p className="text-muted-foreground mb-2">
+          We&apos;ve sent a verification link to{" "}
+          <span className="text-foreground">{details.email}</span>.
         </p>
+        <p className="text-muted-foreground mb-8">
+          Click it, then log in. Nothing to set up in the meantime.
+        </p>
+
         <button
           onClick={() => router.push("/login")}
-          className="bg-white border text-black p-2 px-4 rounded-lg"
+          className="w-full px-4 py-3 rounded-xl font-medium"
+          style={{
+            backgroundColor: "hsl(var(--primary))",
+            color: "hsl(var(--primary-foreground))",
+          }}
         >
-          Go to Login
+          Go to login
         </button>
-      </div>
+      </AuthLayout>
     );
   }
 
   return (
-    <SignupGrid>
-      <div className="flex flex-col gap-2 justify-start items-center">
-        <img
-          src={"/images/logo.png"}
-          alt="logo"
-          className="w-[300px] h-[150px]"
+    <AuthLayout
+      panelHeading={
+        <>
+          Start where you are.
+          <br />
+          Get where you&apos;re going.
+        </>
+      }
+      perks={PERKS}
+    >
+      <h1 className="text-3xl font-semibold mb-1.5">Create your account</h1>
+      <p className="text-muted-foreground mb-8">Takes about thirty seconds.</p>
+
+      <form onSubmit={saveUser} className="flex flex-col gap-4">
+        <TextField
+          label="Name"
+          autoComplete="name"
+          fullWidth
+          value={details.name}
+          onChange={setField("name")}
         />
-        <input
-          type="text"
-          placeholder="Username"
-          name="name"
-          value={FitUserDetails.name}
-          onChange={(e) => PutAttribute(e, "name")}
-          className="p-4 pb-1 pl-1 border-s-black border-b-[2px]"
-        />
-        <input
+
+        <TextField
+          label="Email"
           type="email"
-          placeholder="Email"
-          name="email"
-          value={FitUserDetails.email}
-          onChange={(e) => PutAttribute(e, "email")}
-          className="p-4 pb-1 pl-1 border-s-black border-b-[2px]"
+          autoComplete="email"
+          fullWidth
+          value={details.email}
+          onChange={setField("email")}
         />
-        <input
-          type="password"
-          placeholder="Password"
-          name="password"
-          value={FitUserDetails.password}
-          onChange={(e) => PutAttribute(e, "password")}
-          className="p-4 pb-1 pl-1 border-s-black border-b-[2px]"
+
+        <TextField
+          label="Password"
+          type={showPassword ? "text" : "password"}
+          autoComplete="new-password"
+          fullWidth
+          helperText="At least 6 characters"
+          value={details.password}
+          onChange={setField("password")}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                </button>
+              </InputAdornment>
+            ),
+          }}
         />
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+
+        {error && (
+          <p
+            className="text-sm"
+            style={{ color: "hsl(var(--destructive))" }}
+            role="alert"
+          >
+            {error}
+          </p>
+        )}
+
         <button
-          onClick={saveUser}
+          type="submit"
           disabled={submitting}
-          className="bg-white text-black p-2 px-4 rounded-lg mt-8"
+          className="w-full px-4 py-3 rounded-xl font-medium disabled:opacity-60"
+          style={{
+            backgroundColor: "hsl(var(--primary))",
+            color: "hsl(var(--primary-foreground))",
+          }}
         >
-          {submitting ? "Creating account..." : "Submit"}
+          {submitting ? "Creating account…" : "Create account"}
         </button>
-        <div className="flex items-center justify-end px-2 m-3 pt-4 border-t-2">
-          Already have account?,{" "}
-          <Link href={"/login"} className="text-blue-500">
-            Login
-          </Link>{" "}
-        </div>
-      </div>
-      <div className="flex justify-center">
-        <img
-          src={"/images/SignupLogoBanner.jpg"}
-          alt="SignupPageBanner"
-          className="rounded-md hidden md:inline-block"
-        />
-      </div>
-    </SignupGrid>
+      </form>
+
+      <p className="text-sm text-muted-foreground text-center mt-8">
+        Already have an account?{" "}
+        <Link
+          href="/login"
+          className="font-medium"
+          style={{ color: "hsl(var(--primary))" }}
+        >
+          Log in
+        </Link>
+      </p>
+    </AuthLayout>
   );
 };
 

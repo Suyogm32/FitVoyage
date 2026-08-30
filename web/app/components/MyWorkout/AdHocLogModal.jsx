@@ -5,6 +5,7 @@ import { Search } from "lucide-react";
 import apiClient from "@/lib/apiClient";
 import { usesWeightEquipment } from "@/app/utils/weightedEquipment";
 import SidePanel from "@/app/components/SidePanel";
+import { useToast } from "@/app/components/ToastProvider";
 
 const AdHocLogModal = ({ date, day, onClose, onSaved }) => {
   const [query, setQuery] = useState("");
@@ -14,6 +15,7 @@ const AdHocLogModal = ({ date, day, onClose, onSaved }) => {
   const [sets, setSets] = useState([{ reps: "", weight: "" }]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const toast = useToast();
 
   const tracksWeight = selected
     ? usesWeightEquipment(selected.equipment)
@@ -46,6 +48,7 @@ const AdHocLogModal = ({ date, day, onClose, onSaved }) => {
     if (!selected || saving) return;
     setSaving(true);
     setError("");
+    let succeeded = false;
     try {
       // No plan means no target to fall short of, so each set is its own
       // benchmark — targetReps mirrors what was actually done.
@@ -69,13 +72,17 @@ const AdHocLogModal = ({ date, day, onClose, onSaved }) => {
         exercise_ID: selected.id,
         setsCompleted,
       });
-      onSaved?.();
-      onClose();
+      succeeded = true;
     } catch (err) {
       console.error("Error logging exercise:", err);
       setError("Failed to log this exercise. Please try again.");
     } finally {
       setSaving(false);
+    }
+    if (succeeded) {
+      toast.success(`${selected.name} logged`);
+      onSaved?.();
+      onClose();
     }
   };
 

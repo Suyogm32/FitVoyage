@@ -4,6 +4,7 @@ import { Typography, Button, TextField, MenuItem } from "@mui/material";
 import apiClient from "@/lib/apiClient";
 import { usesWeightEquipment } from "@/app/utils/weightedEquipment";
 import SetPlanner from "@/app/components/SetPlanner";
+import { useToast } from "@/app/components/ToastProvider";
 
 const DAY_OPTIONS = [
   { value: "mon", label: "Monday" },
@@ -18,6 +19,7 @@ const DAY_OPTIONS = [
 const AddExeForm = ({ exercise, setShowPopup, onScheduleChange }) => {
   const [submitting, setSubmitting] = useState(false);
   const defaultUsesWeight = usesWeightEquipment(exercise.equipment);
+  const toast = useToast();
 
   const [userExercise, setUserExercise] = useState({
     exerciseName: exercise.name,
@@ -56,15 +58,25 @@ const AddExeForm = ({ exercise, setShowPopup, onScheduleChange }) => {
     if (submitting) return;
     setSubmitting(true);
     setError("");
+    let succeeded = false;
     try {
       await apiClient.put("/api/saveworkout", { day, userExercise });
-      onScheduleChange?.();
-      setShowPopup(false);
+      succeeded = true;
     } catch (err) {
       console.error("Error adding exercise:", err);
       setError("Failed to add exercise. Please try again.");
     } finally {
       setSubmitting(false);
+    }
+
+    // The panel closes on success, so the confirmation has to live outside it.
+    // Failures keep the inline message instead — the user is still in the form
+    // and needs the error next to the control that produced it.
+    if (succeeded) {
+      const label = DAY_OPTIONS.find((d) => d.value === day)?.label || day;
+      toast.success(`${exercise.name} added to ${label}`);
+      onScheduleChange?.();
+      setShowPopup(false);
     }
   };
 

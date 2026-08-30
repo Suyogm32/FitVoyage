@@ -4,6 +4,8 @@ import { Typography, Button, TextField } from "@mui/material";
 import { RefreshCw, Pencil, X, Check } from "lucide-react";
 import apiClient from "@/lib/apiClient";
 import { cardClass } from "@/lib/styles";
+import ConfirmDialog from "@/app/components/ConfirmDialog";
+import { useToast } from "@/app/components/ToastProvider";
 
 const textMuted = { color: "hsl(var(--muted-foreground))" };
 
@@ -89,6 +91,8 @@ const ProgramReview = ({
   const [draft, setDraft] = useState({ sets: "", reps: "" });
   const [applying, setApplying] = useState(false);
   const [error, setError] = useState("");
+  const [confirming, setConfirming] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     let cancelled = false;
@@ -193,7 +197,18 @@ const ProgramReview = ({
 
     // Outside the try on purpose — a bug in the caller's callback must not
     // be reported to the user as an API failure.
-    if (succeeded) onApplied?.();
+    if (succeeded) {
+      const total = days.reduce((sum, day) => sum + day.exercises.length, 0);
+      toast.success(
+        scope === "week"
+          ? `Weekly schedule replaced — ${total} exercises across ${days.length} days`
+          : `${DAY_LABELS[days[0]?.day]} replaced — ${total} exercises`,
+      );
+      setConfirming(false);
+      onApplied?.();
+    } else {
+      setConfirming(false);
+    }
   };
 
   if (!days)
@@ -358,12 +373,30 @@ const ProgramReview = ({
         <Button
           variant="contained"
           color="error"
-          onClick={apply}
+          onClick={() => setConfirming(true)}
           disabled={applying}
         >
           {applying ? "Applying…" : "Apply to schedule"}
         </Button>
       </div>
+      {confirming && (
+        <ConfirmDialog
+          title={
+            scope === "week"
+              ? "Replace your whole week?"
+              : `Replace ${DAY_LABELS[days[0]?.day]}?`
+          }
+          body={
+            scope === "week"
+              ? "Every day in your current schedule is replaced by what's shown here. Workouts you've already logged keep the plan they were logged against, so your history is untouched."
+              : `Everything currently scheduled on ${DAY_LABELS[days[0]?.day]} is replaced. Already-logged workouts keep the plan they were logged against.`
+          }
+          confirmLabel="Apply"
+          busy={applying}
+          onConfirm={apply}
+          onClose={() => setConfirming(false)}
+        />
+      )}
     </div>
   );
 };

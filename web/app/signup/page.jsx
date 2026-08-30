@@ -1,13 +1,20 @@
-"use Client";
-import React from "react";
+"use client";
+import React, { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../api/Authprovider/Authprovider";
 import FitUser from "./FitUser";
 
-const Signup = () => {
-  return (
-    <div className="bg-LoginBackCol text-black w-screen h-screen flex flex-col justify-center items-center gap-2">
-      <FitUser />
-    </div>
-  );
-};
+export default function SignupPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
 
-export default Signup;
+  useEffect(() => {
+    if (!loading && user) {
+      router.push("/progress");
+    }
+  }, [user, loading, router]);
+
+  if (loading || user) return null;
+
+  return <FitUser />;
+}

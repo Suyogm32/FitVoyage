@@ -14,11 +14,11 @@ export const STORAGE_KEY_ACCENT = "befit:theme-accent";
 // only fills in keys you didn't provide.
 const FALLBACKS = {
   light: {
-    "--background": "4 55% 91%",
+    "--background": "0 0% 97%",
     "--foreground": "240 10% 12%",
     "--card": "0 0% 100%",
-    "--muted-foreground": "0 0% 42%",
-    "--border": "240 6% 86%",
+    "--muted-foreground": "240 4% 46%",
+    "--border": "240 6% 89%",
     "--success": "142 64% 38%",
     "--info": "217 91% 45%",
     "--warning": "38 92% 46%",

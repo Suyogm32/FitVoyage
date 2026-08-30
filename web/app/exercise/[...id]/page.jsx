@@ -1,13 +1,12 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import Navbar from "@/app/components/Navbar";
 import { fetchData, youtubeVideoOptions } from "@/app/utils/fetchData";
 import Details from "@/app/components/ExerciseDetails/Details";
 import ExerciseVideos from "@/app/components/ExerciseDetails/ExerciseVideos";
 import SimilarExercises from "@/app/components/ExerciseDetails/SimilarExercises";
 import apiClient from "@/lib/apiClient";
-import Footer from "@/app/components/Footer";
+import PageShell from "@/app/components/PageShell";
 
 const ExerciseDetail = () => {
   const [currentExercise, setCurrentExercise] = useState({});
@@ -47,8 +46,9 @@ const ExerciseDetail = () => {
   }, [id]);
 
   return (
-    <>
-      <Navbar />
+    // PageShell picks the chrome: sidebar when signed in, public navbar and
+    // footer when not — so an exercise link is shareable with anyone.
+    <PageShell title={currentExercise.name}>
       <Details exerciseDetail={currentExercise} />
       <ExerciseVideos
         exerciseVideosData={exerciseVideosData}
@@ -58,8 +58,7 @@ const ExerciseDetail = () => {
         targetMuscleExercises={targetMuscleExerciseData}
         equipmentExercises={equipmentExerciseData}
       />
-      <Footer />
-    </>
+    </PageShell>
   );
 };
 

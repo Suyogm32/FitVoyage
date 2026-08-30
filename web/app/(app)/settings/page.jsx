@@ -14,6 +14,7 @@ import {
 import apiClient from "@/lib/apiClient";
 import { useUserProfile } from "@/lib/useUserProfile";
 import { cardClass } from "@/lib/styles";
+import AppearanceCard from "@/app/components/AppearanceCard";
 
 const textMuted = { color: "hsl(var(--muted-foreground))" };
 
@@ -126,6 +127,7 @@ const SettingsPage = () => {
 
   return (
     <div className="flex flex-col gap-6 max-w-3xl">
+      <AppearanceCard />
       <div className={`${cardClass} p-5`}>
         <Typography variant="h6">Weight unit</Typography>
         <Typography variant="body2" sx={textMuted} className="mb-3">

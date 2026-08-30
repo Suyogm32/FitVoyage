@@ -16,6 +16,7 @@ import { useCoachSuggestions } from "@/lib/useCoachSuggestions";
 import { useDayFocus } from "@/lib/useDayFocus";
 import { buildGreeting } from "@/lib/greeting";
 import { useAuth } from "@/app/api/Authprovider/Authprovider";
+import { useToast } from "@/app/components/ToastProvider";
 
 import {
   DndContext,
@@ -41,6 +42,7 @@ const MyWorkout = () => {
   const [modalExercise, setModalExercise] = useState(null);
   const [showAdHoc, setShowAdHoc] = useState(false);
   const [weekRefreshTrigger, setWeekRefreshTrigger] = useState(0);
+  const toast = useToast();
 
   const { stats } = useProgress({
     referenceDate: selectedDate,
@@ -96,6 +98,7 @@ const MyWorkout = () => {
 
   const handleSaveLog = async (setsCompleted, feel) => {
     if (!modalExercise) return;
+    const name = modalExercise.exerciseName;
     try {
       await apiClient.post("/api/myschedule", {
         date: formattedDate,
@@ -107,8 +110,10 @@ const MyWorkout = () => {
       setModalExercise(null);
       loadExercises();
       setWeekRefreshTrigger((prev) => prev + 1);
+      toast.success(`${name} logged`);
     } catch (error) {
       console.error("Error saving log:", error);
+      toast.error("Couldn't save that log. Please try again.");
     }
   };
 
@@ -137,8 +142,10 @@ const MyWorkout = () => {
       });
       loadExercises();
       setWeekRefreshTrigger((prev) => prev + 1);
+      toast.success(`New targets applied to ${exercise.exerciseName}`);
     } catch (error) {
       console.error("Error applying suggestion:", error);
+      toast.error("Couldn't apply that suggestion. Please try again.");
     }
   };
 

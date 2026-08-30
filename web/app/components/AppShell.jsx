@@ -18,6 +18,8 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import Logo from "./Logo";
+import ThemeToggle from "./ThemeToggle";
 
 const NAV_ITEMS = [
   { href: "/progress", label: "Dashboard", Icon: LayoutDashboard },
@@ -30,14 +32,19 @@ const NAV_ITEMS = [
 
 const STORAGE_KEY = "befit:sidebar-collapsed";
 
-const AppShell = ({ children }) => {
+const AppShell = ({ title: titleOverride, children }) => {
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { user, loading } = useAuth();
 
-  const title = NAV_ITEMS.find((item) => item.href === pathname)?.label || "";
+  // Pages with dynamic names (an exercise, say) pass their own title; the rest
+  // derive it from the nav item they match.
+  const title =
+    titleOverride ||
+    NAV_ITEMS.find((item) => item.href === pathname)?.label ||
+    "";
 
   useEffect(() => {
     try {
@@ -89,12 +96,8 @@ const AppShell = ({ children }) => {
             collapsed ? "md:justify-center" : "justify-between"
           }`}
         >
-          <Link href="/" className={collapsed ? "md:hidden" : ""}>
-            <img
-              src="/images/Logo.png"
-              alt="Fit Voyage"
-              className="h-14 w-auto pl-2"
-            />
+          <Link href="/" className="flex items-center pl-1">
+            <Logo size={30} wordmark={!collapsed} />
           </Link>
           <button
             className="hidden md:block p-1 rounded hover:bg-muted"
@@ -205,7 +208,8 @@ const AppShell = ({ children }) => {
           >
             <Menu size={22} />
           </button>
-          <h1 className="text-2xl flex-1">{title}</h1>
+          <h1 className="text-2xl flex-1 capitalize">{title}</h1>
+          <ThemeToggle />
         </header>
         <main className="px-4 md:px-8 py-6">{children}</main>
       </div>
