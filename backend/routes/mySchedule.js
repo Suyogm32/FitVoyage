@@ -277,4 +277,19 @@ router.post("/readiness", requireAuth, async (req, res) => {
   }
 });
 
+// The whole focus map in one call — used by /schedule to label days, by
+// /myworkout for the greeting, and by /program to prefill muscle focus.
+router.get("/focus", requireAuth, async (req, res) => {
+  try {
+    const workoutDoc = await Workouts.findOne({ user: req.user.dbId })
+      .select("dayFocus")
+      .lean();
+    res.json({ dayFocus: workoutDoc?.dayFocus || {} });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching day focus.", error: error.message });
+  }
+});
+
 export default router;

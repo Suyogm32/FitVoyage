@@ -16,7 +16,7 @@ const UserSchema = new Schema(
         targetSets: { type: Number, required: true, min: 0 },
       },
     ],
-        // Inputs for program generation. Stored so the form doesn't re-ask
+    // Inputs for program generation. Stored so the form doesn't re-ask
     // every time; each field is overridable per generation.
     // bodyWeight is a single value for now — it will go stale, and the
     // right shape long-term is a log with history. Deliberate debt: the

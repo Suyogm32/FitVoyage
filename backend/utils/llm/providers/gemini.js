@@ -22,7 +22,10 @@ export const complete = async ({ system, payload }) => {
           system_instruction: { parts: [{ text: system }] },
           contents: [{ parts: [{ text: JSON.stringify(payload) }] }],
           // Forces JSON output rather than hoping the prompt is obeyed.
-          generationConfig: { responseMimeType: "application/json", temperature: 0.4 },
+          generationConfig: {
+            responseMimeType: "application/json",
+            temperature: 0.4,
+          },
         }),
       },
     );

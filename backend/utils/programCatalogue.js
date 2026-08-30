@@ -14,8 +14,7 @@ export const withBodyweight = (equipment = []) => [
   ...new Set([...equipment, ...ALWAYS_AVAILABLE_EQUIPMENT]),
 ];
 
-// Cardio movements are noise in a hypertrophy or strength program — they're
-// what surfaced "air bike" and "wheel run" in the generated plans.
+// Cardio movements are noise in a hypertrophy or strength program.
 const STRENGTH_GOALS = ["build_muscle", "get_stronger"];
 const EXCLUDED_BODY_PARTS = ["cardio"];
 const MIN_AFTER_GOAL_FILTER = 10;
@@ -35,15 +34,17 @@ export const filterByGoal = (exercises, goal) => {
 const MAX_PER_BODY_PART = 25;
 const MAX_PER_EQUIPMENT = 5;
 
+// Below this, there's nothing for the caps to protect against — trimming a
+// narrow equipment selection just starves the generator.
+const MIN_TRIM_THRESHOLD = 60;
+
 // Shorter names correlate with staple movements in this catalogue
 // ("Barbell Bench Press" vs "Barbell Bench Press With Chains On Smith
 // Machine"), so name length is a cheap, deterministic proxy for "standard".
 const byNameLength = (a, b) => a.name.length - b.name.length;
 
-// Below this, there's nothing for the caps to protect against — trimming a
-// narrow equipment selection just starves the generator.
-const MIN_TRIM_THRESHOLD = 60;
-
+// Caps per body part, and per equipment within each body part so one
+// equipment type can't crowd out the rest for a full-gym user.
 export const selectCatalogue = (
   exercises,
   {
@@ -72,7 +73,9 @@ export const selectCatalogue = (
 
     const forBodyPart = [];
     for (const [, equipmentGroup] of byEquipment) {
-      forBodyPart.push(...[...equipmentGroup].sort(byNameLength).slice(0, maxPerEquipment));
+      forBodyPart.push(
+        ...[...equipmentGroup].sort(byNameLength).slice(0, maxPerEquipment),
+      );
     }
 
     selected.push(...forBodyPart.sort(byNameLength).slice(0, maxPerBodyPart));
@@ -95,10 +98,12 @@ export const buildProgramPayload = ({
   catalogue,
   scope = "week",
   targetDay = null,
+  focus = null,
   weightUnit = "kg",
 }) => ({
   scope,
   targetDay,
+  focus,
   profile: {
     goal: trainingProfile.goal || "general_fitness",
     experience: trainingProfile.experience || "beginner",
@@ -106,7 +111,10 @@ export const buildProgramPayload = ({
     bodyWeight: trainingProfile.bodyWeight ?? null,
     goalWeight: trainingProfile.goalWeight ?? null,
     weightUnit,
-    direction: deriveDirection(trainingProfile.bodyWeight, trainingProfile.goalWeight),
+    direction: deriveDirection(
+      trainingProfile.bodyWeight,
+      trainingProfile.goalWeight,
+    ),
   },
   catalogue: catalogue.map((exercise) => ({
     id: exercise.id,
@@ -138,7 +146,10 @@ export const validatePlan = (plan, allowedIds) => {
     const exercises = [];
     for (const exercise of day.exercises || []) {
       if (!allowed.has(exercise?.exerciseId)) {
-        dropped.push({ reason: "unknown_exercise", value: exercise?.exerciseId });
+        dropped.push({
+          reason: "unknown_exercise",
+          value: exercise?.exerciseId,
+        });
         continue;
       }
 
@@ -148,8 +159,13 @@ export const validatePlan = (plan, allowedIds) => {
         continue;
       }
 
-      const reps = Array.isArray(exercise.reps) ? exercise.reps.map(Number) : [];
-      if (reps.length !== sets || reps.some((r) => !Number.isInteger(r) || r < 1 || r > 100)) {
+      const reps = Array.isArray(exercise.reps)
+        ? exercise.reps.map(Number)
+        : [];
+      if (
+        reps.length !== sets ||
+        reps.some((r) => !Number.isInteger(r) || r < 1 || r > 100)
+      ) {
         dropped.push({ reason: "bad_reps", value: exercise.exerciseId });
         continue;
       }

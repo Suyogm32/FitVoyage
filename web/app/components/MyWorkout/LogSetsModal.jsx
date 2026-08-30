@@ -27,20 +27,30 @@ const LogSetsModal = ({ exercise, coachMode, onSave, onClose }) => {
     if (!exercise) return;
     const existing = exercise.setsCompleted || [];
 
-    const initialReps = Array.from({ length: exercise.numberOfSets }, (_, i) => {
-      const match = existing.find((s) => s.setNumber === i + 1);
-      return match ? match.repsCompleted : "";
-    });
+    const initialReps = Array.from(
+      { length: exercise.numberOfSets },
+      (_, i) => {
+        const match = existing.find((s) => s.setNumber === i + 1);
+        return match ? match.repsCompleted : "";
+      },
+    );
 
     // Prefill weight with what was already logged, falling back to the
     // planned target so the common case is a confirmation, not retyping.
-    const initialWeights = Array.from({ length: exercise.numberOfSets }, (_, i) => {
-      const match = existing.find((s) => s.setNumber === i + 1);
-      if (match && match.weightUsed !== null && match.weightUsed !== undefined) {
-        return match.weightUsed;
-      }
-      return exercise.targetWeight?.[i] ?? "";
-    });
+    const initialWeights = Array.from(
+      { length: exercise.numberOfSets },
+      (_, i) => {
+        const match = existing.find((s) => s.setNumber === i + 1);
+        if (
+          match &&
+          match.weightUsed !== null &&
+          match.weightUsed !== undefined
+        ) {
+          return match.weightUsed;
+        }
+        return exercise.targetWeight?.[i] ?? "";
+      },
+    );
 
     setReps(initialReps);
     setWeights(initialWeights);
@@ -90,7 +100,9 @@ const LogSetsModal = ({ exercise, coachMode, onSave, onClose }) => {
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle textTransform="capitalize">{exercise.exerciseName}</DialogTitle>
+      <DialogTitle textTransform="capitalize">
+        {exercise.exerciseName}
+      </DialogTitle>
       <DialogContent>
         {!hasTargets ? (
           <Typography color="error">
@@ -114,6 +126,7 @@ const LogSetsModal = ({ exercise, coachMode, onSave, onClose }) => {
                     label={`Weight (${unit})`}
                     type="number"
                     size="small"
+                    placeholder="start light"
                     inputProps={{ step: 0.5, min: 0 }}
                     value={weights[i] ?? ""}
                     onChange={(e) => handleWeightChange(i, e.target.value)}

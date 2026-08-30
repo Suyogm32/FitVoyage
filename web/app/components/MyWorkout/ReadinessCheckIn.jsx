@@ -41,7 +41,11 @@ const ReadinessCheckIn = ({ date, day }) => {
     if (saving) return;
     setSaving(true);
     try {
-      await apiClient.post("/api/myschedule/readiness", { date, day, readiness: value });
+      await apiClient.post("/api/myschedule/readiness", {
+        date,
+        day,
+        readiness: value,
+      });
       setReadiness(value);
     } catch (error) {
       console.error("Error saving readiness:", error);

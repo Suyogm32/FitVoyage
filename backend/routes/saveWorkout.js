@@ -158,4 +158,36 @@ router.delete("/", requireAuth, async (req, res) => {
   }
 });
 
+const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+
+// Setting a day's focus doesn't touch exercises, so it's a plain update —
+// no tombstoning, nothing versioned. A label isn't part of the plan's
+// history.
+router.patch("/focus", requireAuth, async (req, res) => {
+  try {
+    const { day, focus } = req.body;
+
+    if (!DAY_KEYS.includes(day)) {
+      return res.status(400).json({ message: "Invalid day." });
+    }
+    if (typeof focus !== "string") {
+      return res.status(400).json({ message: "focus must be a string." });
+    }
+
+    const workoutDoc = await Workouts.findOneAndUpdate(
+      { user: req.user.dbId },
+      { $set: { [`dayFocus.${day}`]: focus.trim().slice(0, 40) } },
+      { new: true, upsert: true },
+    )
+      .select("dayFocus")
+      .lean();
+
+    res.json({ dayFocus: workoutDoc.dayFocus });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error saving day focus.", error: error.message });
+  }
+});
+
 export default router;

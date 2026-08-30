@@ -31,7 +31,9 @@ export const complete = async ({ system, payload }) => {
     });
 
     if (!response.ok) {
-      throw new Error(`OpenRouter ${response.status}: ${await response.text()}`);
+      throw new Error(
+        `OpenRouter ${response.status}: ${await response.text()}`,
+      );
     }
 
     const data = await response.json();

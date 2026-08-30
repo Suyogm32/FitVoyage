@@ -21,7 +21,9 @@ const run = async () => {
   const scope = process.env.COMPARE_SCOPE || "week";
 
   if (!email) {
-    console.error("Set COMPARE_USER_EMAIL to the account whose profile to use.");
+    console.error(
+      "Set COMPARE_USER_EMAIL to the account whose profile to use.",
+    );
     process.exit(1);
   }
 
@@ -36,17 +38,19 @@ const run = async () => {
   }
 
   const equipment = withBodyweight(user.trainingProfile?.availableEquipment);
-  
+
   const matching = await ExerciseDB.find({ equipment: { $in: equipment } })
     .select("id name bodyPart target equipment")
     .lean();
-  
-    const catalogue = selectCatalogue(
-        filterByGoal(matching, user.trainingProfile?.goal),
-    );
+
+  const catalogue = selectCatalogue(
+    filterByGoal(matching, user.trainingProfile?.goal),
+  );
 
   console.log(`\nProfile: ${JSON.stringify(user.trainingProfile)}`);
-  console.log(`Equipment matches ${matching.length} exercises, trimmed to ${catalogue.length}.`);
+  console.log(
+    `Equipment matches ${matching.length} exercises, trimmed to ${catalogue.length}.`,
+  );
 
   const providers = listProviders();
   if (providers.length === 0) {
@@ -68,7 +72,9 @@ const run = async () => {
     const elapsed = ((Date.now() - startedAt) / 1000).toFixed(1);
 
     console.log("=".repeat(60));
-    console.log(`${provider}  —  ${elapsed}s  —  ${result.ok ? "ok" : `failed (${result.reason})`}`);
+    console.log(
+      `${provider}  —  ${elapsed}s  —  ${result.ok ? "ok" : `failed (${result.reason})`}`,
+    );
     console.log("=".repeat(60));
 
     const nameById = new Map(catalogue.map((e) => [e.id, e.name]));
@@ -76,7 +82,9 @@ const run = async () => {
       console.log(`\n${day.day.toUpperCase()}  ${day.focus}`);
       for (const exercise of day.exercises) {
         const name = nameById.get(exercise.exerciseId) || exercise.exerciseId;
-        console.log(`  ${name} — ${exercise.sets} sets, reps ${exercise.reps.join("/")}`);
+        console.log(
+          `  ${name} — ${exercise.sets} sets, reps ${exercise.reps.join("/")}`,
+        );
       }
     }
 

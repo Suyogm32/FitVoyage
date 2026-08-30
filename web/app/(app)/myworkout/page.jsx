@@ -8,11 +8,14 @@ import AdHocLogModal from "@/app/components/MyWorkout/AdHocLogModal";
 import ReadinessCheckIn from "@/app/components/MyWorkout/ReadinessCheckIn";
 import WeeklyProgress from "@/app/components/MyWorkout/WeeklyProgress";
 import dayjs from "dayjs";
-import { Button } from "@mui/material";
+import { Button, Typography } from "@mui/material";
 import apiClient from "@/lib/apiClient";
 import { useProgress } from "@/lib/useProgress";
 import { useUserProfile } from "@/lib/useUserProfile";
 import { useCoachSuggestions } from "@/lib/useCoachSuggestions";
+import { useDayFocus } from "@/lib/useDayFocus";
+import { buildGreeting } from "@/lib/greeting";
+import { useAuth } from "@/app/api/Authprovider/Authprovider";
 
 import {
   DndContext,
@@ -56,6 +59,9 @@ const MyWorkout = () => {
       activationConstraint: { delay: 150, tolerance: 8 },
     }),
   );
+
+  const { dayFocus } = useDayFocus();
+  const { user } = useAuth();
 
   const loadExercises = useCallback(async () => {
     try {
@@ -111,7 +117,7 @@ const MyWorkout = () => {
     setWeekRefreshTrigger((prev) => prev + 1);
   };
 
-    // Applying a suggestion is a schedule edit, so it goes through the same
+  // Applying a suggestion is a schedule edit, so it goes through the same
   // versioned PATCH: the old entry is tombstoned and a new one dated today
   // replaces it. Past dates keep the targets they actually had.
   const applySuggestion = async (exercise, suggestion) => {
@@ -138,6 +144,21 @@ const MyWorkout = () => {
 
   return (
     <>
+      {/* Rest day is derived from having nothing scheduled, so it can't
+          disagree with the actual plan. */}
+      <div className="mb-4">
+        <Typography variant="h5" textTransform="capitalize">
+          {buildGreeting({
+            displayName: user?.displayName,
+            focus: dayFocus[dayKey],
+            hasExercises: exercises.length > 0,
+            isToday,
+            dayKey,
+            completedCount: done.length,
+            totalCount: exercises.length,
+          })}
+        </Typography>
+      </div>
       {/* Only for today — "how are you feeling" is a present-tense question,
           and coach mode users opted into being asked. */}
       {coachMode && isToday && (
@@ -147,7 +168,10 @@ const MyWorkout = () => {
       )}
 
       <div className="flex flex-col gap-8 md:flex-row items-start">
-        <Calender className="flex flex-auto" setSelectedDate={setSelectedDate} />
+        <Calender
+          className="flex flex-auto"
+          setSelectedDate={setSelectedDate}
+        />
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
           <WorkoutColumn
             id="todo-column"

@@ -31,6 +31,18 @@ const WorkoutScheduleSchema = new Schema(
       sat: [ExerciseDetailsSchema],
       sun: [ExerciseDetailsSchema],
     },
+    // Free-text label per day ("chest", "push day", "legs"). Kept parallel
+    // to schedule rather than restructuring schedule[day] into an object —
+    // that shape is read in half a dozen places and this is just a label.
+    dayFocus: {
+      mon: { type: String, default: "" },
+      tue: { type: String, default: "" },
+      wed: { type: String, default: "" },
+      thu: { type: String, default: "" },
+      fri: { type: String, default: "" },
+      sat: { type: String, default: "" },
+      sun: { type: String, default: "" },
+    },
   },
   { timestamps: true },
 );

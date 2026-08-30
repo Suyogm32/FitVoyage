@@ -91,7 +91,9 @@ const SettingsPage = () => {
       trainingProfile: {
         goal: draft.goal || null,
         experience: draft.experience || null,
-        ...(draft.daysPerWeek !== "" && { daysPerWeek: Number(draft.daysPerWeek) }),
+        ...(draft.daysPerWeek !== "" && {
+          daysPerWeek: Number(draft.daysPerWeek),
+        }),
         bodyWeight: draft.bodyWeight === "" ? null : Number(draft.bodyWeight),
         goalWeight: draft.goalWeight === "" ? null : Number(draft.goalWeight),
         availableEquipment: draft.availableEquipment,
@@ -117,7 +119,8 @@ const SettingsPage = () => {
   };
 
   if (error) return <Typography color="error">{error}</Typography>;
-  if (!profile || !draft) return <Typography sx={textMuted}>Loading...</Typography>;
+  if (!profile || !draft)
+    return <Typography sx={textMuted}>Loading...</Typography>;
 
   const unit = profile.preferredWeightUnit || "kg";
 
@@ -200,7 +203,9 @@ const SettingsPage = () => {
             size="small"
             inputProps={{ min: 1, max: 7 }}
             value={draft.daysPerWeek}
-            onChange={(e) => setDraft({ ...draft, daysPerWeek: e.target.value })}
+            onChange={(e) =>
+              setDraft({ ...draft, daysPerWeek: e.target.value })
+            }
           />
 
           <div />
@@ -259,9 +264,7 @@ const SettingsPage = () => {
                     onChange={() => toggleEquipment(item)}
                   />
                 }
-                label={
-                  <span className="text-sm capitalize">{item}</span>
-                }
+                label={<span className="text-sm capitalize">{item}</span>}
               />
             ))}
           </div>

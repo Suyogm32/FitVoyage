@@ -16,7 +16,8 @@ export const DEFAULT_RULES = [
     priority: 10,
     when: { consecutiveMisses: { gte: 2 } },
     then: { action: "deload", loadDeltaPct: -10, repDelta: 0 },
-    explain: "Missed your targets two sessions running — backing off to rebuild.",
+    explain:
+      "Missed your targets two sessions running — backing off to rebuild.",
   },
   {
     id: "hold-after-miss",
@@ -39,7 +40,7 @@ export const DEFAULT_RULES = [
     then: { action: "hold", loadDeltaPct: 0, repDelta: 0 },
     explain: "You're not feeling recovered today — hold rather than push.",
   },
-   {
+  {
     id: "increase-when-easy",
     priority: 40,
     when: { hitAllTargets: { eq: true }, feel: { eq: "easy" } },
@@ -60,7 +61,8 @@ export const DEFAULT_RULES = [
 const OPERATORS = {
   eq: (actual, expected) => actual === expected,
   neq: (actual, expected) => actual !== expected,
-  in: (actual, expected) => Array.isArray(expected) && expected.includes(actual),
+  in: (actual, expected) =>
+    Array.isArray(expected) && expected.includes(actual),
   gte: (actual, expected) => typeof actual === "number" && actual >= expected,
   lte: (actual, expected) => typeof actual === "number" && actual <= expected,
 };
@@ -95,7 +97,8 @@ const applyLoadDelta = (weight, pct) => {
   // bug. Step to the neighbouring grid multiple rather than weight ± step,
   // so the result stays on the grid even when the starting weight isn't.
   if (pct > 0 && next <= weight) next = Math.floor(weight / step) * step + step;
-  if (pct < 0 && next >= weight) next = Math.max(step, Math.ceil(weight / step) * step - step);
+  if (pct < 0 && next >= weight)
+    next = Math.max(step, Math.ceil(weight / step) * step - step);
 
   return next;
 };
@@ -123,7 +126,9 @@ const shiftLadder = (weights) => {
 
 const hitAllTargets = (session) => {
   const sets = session.setsCompleted || [];
-  return sets.length > 0 && sets.every((set) => set.repsCompleted >= set.targetReps);
+  return (
+    sets.length > 0 && sets.every((set) => set.repsCompleted >= set.targetReps)
+  );
 };
 
 // sessions: newest first, each { date, feel, setsCompleted }
@@ -157,11 +162,17 @@ export const analyseHistory = (sessions, todayReadiness) => {
     lastWeights: sets.map((set) => set.weightUsed ?? null),
     lastReps: sets.map((set) => set.repsCompleted),
     lastTargets: sets.map((set) => set.targetReps),
-    usesWeight: sets.some((set) => set.weightUsed != null && set.weightUsed > 0),
+    usesWeight: sets.some(
+      (set) => set.weightUsed != null && set.weightUsed > 0,
+    ),
   };
 };
 
-export const buildSuggestion = ({ sessions, todayReadiness, rules = DEFAULT_RULES }) => {
+export const buildSuggestion = ({
+  sessions,
+  todayReadiness,
+  rules = DEFAULT_RULES,
+}) => {
   const facts = analyseHistory(sessions, todayReadiness);
   if (!facts) {
     return {
@@ -201,7 +212,9 @@ export const buildSuggestion = ({ sessions, todayReadiness, rules = DEFAULT_RULE
 
   const suggestedReps = facts.usesWeight
     ? facts.lastTargets.map((target, i) => target ?? facts.lastReps[i])
-    : facts.lastReps.map((reps) => Math.max(1, reps + (rule.then.repDelta || 0)));
+    : facts.lastReps.map((reps) =>
+        Math.max(1, reps + (rule.then.repDelta || 0)),
+      );
 
   return {
     action: rule.then.action,

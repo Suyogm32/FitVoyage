@@ -12,6 +12,7 @@ import {
   Dumbbell,
   CalendarDays,
   Search,
+  Sparkles,
   Settings,
   LogOut,
   ChevronLeft,
@@ -22,6 +23,7 @@ const NAV_ITEMS = [
   { href: "/progress", label: "Dashboard", Icon: LayoutDashboard },
   { href: "/myworkout", label: "Workout", Icon: Dumbbell },
   { href: "/schedule", label: "Schedule", Icon: CalendarDays },
+  { href: "/program", label: "AI Program", Icon: Sparkles },
   { href: "/", label: "Browse exercises", Icon: Search },
   { href: "/settings", label: "Settings", Icon: Settings },
 ];
@@ -99,7 +101,11 @@ const AppShell = ({ children }) => {
           }`}
         >
           <Link href="/" className={collapsed ? "md:hidden" : ""}>
-            <img src="/images/Logo.png" alt="Fit Voyage" className="h-14 w-auto pl-2" />
+            <img
+              src="/images/Logo.png"
+              alt="Fit Voyage"
+              className="h-14 w-auto pl-2"
+            />
           </Link>
           <button
             className="hidden md:block p-1 rounded hover:bg-black/5"
@@ -108,7 +114,11 @@ const AppShell = ({ children }) => {
           >
             {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
-          <button className="md:hidden" onClick={() => setOpen(false)} aria-label="Close menu">
+          <button
+            className="md:hidden"
+            onClick={() => setOpen(false)}
+            aria-label="Close menu"
+          >
             <X size={20} />
           </button>
         </div>
@@ -132,7 +142,11 @@ const AppShell = ({ children }) => {
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 text-sm ${
                   collapsed ? "md:justify-center md:px-0" : ""
                 } ${active ? "text-white" : "text-black/70 hover:bg-black/5"}`}
-                style={active ? { backgroundColor: "hsl(var(--primary))" } : undefined}
+                style={
+                  active
+                    ? { backgroundColor: "hsl(var(--primary))" }
+                    : undefined
+                }
               >
                 <Icon size={18} className="shrink-0" />
                 <span className={collapsed ? "md:hidden" : ""}>{label}</span>
@@ -149,7 +163,11 @@ const AppShell = ({ children }) => {
               }`}
             >
               {user.photoURL ? (
-                <img src={user.photoURL} alt="" className="w-9 h-9 rounded-full shrink-0" />
+                <img
+                  src={user.photoURL}
+                  alt=""
+                  className="w-9 h-9 rounded-full shrink-0"
+                />
               ) : (
                 <div
                   className="w-9 h-9 rounded-full shrink-0 flex items-center justify-center text-white text-sm"
@@ -159,7 +177,9 @@ const AppShell = ({ children }) => {
                 </div>
               )}
               <div className={`min-w-0 ${collapsed ? "md:hidden" : ""}`}>
-                <p className="text-sm truncate">{user.displayName || "Athlete"}</p>
+                <p className="text-sm truncate">
+                  {user.displayName || "Athlete"}
+                </p>
                 <p className="text-xs text-black/50 truncate">{user.email}</p>
               </div>
             </div>
@@ -177,9 +197,15 @@ const AppShell = ({ children }) => {
         </div>
       </aside>
 
-      <div className={`min-h-screen transition-all ${collapsed ? "md:pl-16" : "md:pl-60"}`}>
+      <div
+        className={`min-h-screen transition-all ${collapsed ? "md:pl-16" : "md:pl-60"}`}
+      >
         <header className="flex items-center gap-3 px-4 md:px-8 py-5 border-b border-black/5">
-          <button className="md:hidden" onClick={() => setOpen(true)} aria-label="Open menu">
+          <button
+            className="md:hidden"
+            onClick={() => setOpen(true)}
+            aria-label="Open menu"
+          >
             <Menu size={22} />
           </button>
           <h1 className="text-2xl flex-1">{title}</h1>

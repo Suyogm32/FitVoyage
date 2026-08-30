@@ -28,7 +28,9 @@ const ACTION_STYLE = {
 
 const describeSuggestion = (suggestion, unit) => {
   if (suggestion.usesWeight) {
-    const weights = (suggestion.suggestedWeights || []).filter((w) => w != null);
+    const weights = (suggestion.suggestedWeights || []).filter(
+      (w) => w != null,
+    );
     if (!weights.length) return null;
     return `Try ${weights.join(" · ")} ${unit}`;
   }
@@ -43,7 +45,13 @@ const sameNumbers = (a, b) =>
   a.length === b.length &&
   a.every((value, i) => Number(value) === Number(b[i]));
 
-const WorkoutCard = ({ exercise, suggestion, onApplySuggestion, onLog, onEdit }) => {
+const WorkoutCard = ({
+  exercise,
+  suggestion,
+  onApplySuggestion,
+  onLog,
+  onEdit,
+}) => {
   const [applying, setApplying] = useState(false);
   const draggable = exercise.status === "incomplete";
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
@@ -136,7 +144,11 @@ const WorkoutCard = ({ exercise, suggestion, onApplySuggestion, onLog, onEdit })
                   {ACTION_STYLE[suggestion.action].label} · {suggestionText}
                 </Typography>
                 {alreadyApplied ? (
-                  <Typography variant="caption" color="text.secondary" className="shrink-0">
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    className="shrink-0"
+                  >
                     Applied
                   </Typography>
                 ) : (

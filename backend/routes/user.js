@@ -34,7 +34,10 @@ const sanitiseTrainingProfile = (input) => {
     clean["trainingProfile.goal"] = input.goal;
   }
   if (input.experience !== undefined) {
-    if (input.experience !== null && !EXPERIENCE_LEVELS.includes(input.experience)) {
+    if (
+      input.experience !== null &&
+      !EXPERIENCE_LEVELS.includes(input.experience)
+    ) {
       return null;
     }
     clean["trainingProfile.experience"] = input.experience;
@@ -68,7 +71,8 @@ const sanitiseTrainingProfile = (input) => {
 
 router.patch("/", requireAuth, async (req, res) => {
   try {
-    const { preferredWeightUnit, weeklyGoals, coachMode, trainingProfile } = req.body;
+    const { preferredWeightUnit, weeklyGoals, coachMode, trainingProfile } =
+      req.body;
 
     if (preferredWeightUnit && !["kg", "lb"].includes(preferredWeightUnit)) {
       return res
@@ -97,11 +101,15 @@ router.patch("/", requireAuth, async (req, res) => {
     let trainingProfileUpdates = {};
     if (trainingProfile !== undefined) {
       if (typeof trainingProfile !== "object" || trainingProfile === null) {
-        return res.status(400).json({ message: "trainingProfile must be an object." });
+        return res
+          .status(400)
+          .json({ message: "trainingProfile must be an object." });
       }
       const cleaned = sanitiseTrainingProfile(trainingProfile);
       if (cleaned === null) {
-        return res.status(400).json({ message: "Invalid trainingProfile values." });
+        return res
+          .status(400)
+          .json({ message: "Invalid trainingProfile values." });
       }
       trainingProfileUpdates = cleaned;
     }

@@ -31,7 +31,9 @@ router.get("/suggest", requireAuth, async (req, res) => {
 
     const refDate = dayjs(date, DATE_FORMAT, true);
     if (!refDate.isValid()) {
-      return res.status(400).json({ message: "Invalid date format. Expected DD/MM/YY." });
+      return res
+        .status(400)
+        .json({ message: "Invalid date format. Expected DD/MM/YY." });
     }
 
     const [userDoc, workoutDoc, logDoc] = await Promise.all([
@@ -51,12 +53,16 @@ router.get("/suggest", requireAuth, async (req, res) => {
     );
 
     const entries = (logDoc?.exercises_done || [])
-      .map((entry) => ({ ...entry, parsedDate: dayjs(entry.date, DATE_FORMAT, true) }))
+      .map((entry) => ({
+        ...entry,
+        parsedDate: dayjs(entry.date, DATE_FORMAT, true),
+      }))
       .filter((entry) => entry.parsedDate.isValid())
       .sort((a, b) => b.parsedDate.valueOf() - a.parsedDate.valueOf());
 
     const todayReadiness =
-      entries.find((entry) => entry.date === date && entry.day === day)?.readiness || null;
+      entries.find((entry) => entry.date === date && entry.day === day)
+        ?.readiness || null;
 
     const suggestions = daySchedule.map((exercise) => {
       // History for this exercise only, excluding the session being
@@ -64,7 +70,9 @@ router.get("/suggest", requireAuth, async (req, res) => {
       const sessions = [];
       for (const entry of entries) {
         if (entry.date === date) continue;
-        const logged = entry.exercises?.find((ex) => ex.exercise_ID === exercise.exerciseId);
+        const logged = entry.exercises?.find(
+          (ex) => ex.exercise_ID === exercise.exerciseId,
+        );
         if (!logged) continue;
         sessions.push({
           date: entry.date,

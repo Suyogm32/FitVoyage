@@ -1,4 +1,4 @@
-import { resolveProvider } from "./llm/index.js";
+import { resolveProviderChain } from "./llm/index.js";
 import { buildProgramPayload, validatePlan } from "./programCatalogue.js";
 
 const SYSTEM_PROMPT = `You are a strength coach building a training program.
@@ -34,12 +34,19 @@ export const generateProgram = async ({
   catalogue,
   scope = "week",
   targetDay = null,
+  focus = null,
   weightUnit = "kg",
   provider: requestedProvider,
 }) => {
-  const provider = resolveProvider(requestedProvider);
-  if (!provider) {
-    return { ok: false, reason: "no_provider", days: [], dropped: [] };
+  const chain = resolveProviderChain(requestedProvider);
+  if (chain.length === 0) {
+    return {
+      ok: false,
+      reason: "no_provider",
+      days: [],
+      dropped: [],
+      attempts: [],
+    };
   }
 
   const payload = buildProgramPayload({
@@ -47,28 +54,47 @@ export const generateProgram = async ({
     catalogue,
     scope,
     targetDay,
+    focus,
     weightUnit,
   });
-
-  let text;
-  try {
-    text = await provider.complete({ system: SYSTEM_PROMPT, payload });
-  } catch (error) {
-    console.error(`Program generation failed (${provider.name}):`, error.message);
-    return { ok: false, reason: "provider_error", days: [], dropped: [] };
-  }
-
-  let parsed;
-  try {
-    parsed = parseResponse(text);
-  } catch (error) {
-    console.error("Program generation returned unparseable output:", error.message);
-    return { ok: false, reason: "bad_json", days: [], dropped: [] };
-  }
-
-  // Validate against exactly the ids we sent, not the whole catalogue.
   const allowedIds = new Set(catalogue.map((exercise) => exercise.id));
-  const { days, dropped } = validatePlan(parsed, allowedIds);
+  const attempts = [];
 
-  return { ok: days.length > 0, reason: null, provider: provider.name, days, dropped };
+  for (const provider of chain) {
+    try {
+      const text = await provider.complete({ system: SYSTEM_PROMPT, payload });
+      const parsed = parseResponse(text);
+      const { days, dropped } = validatePlan(parsed, allowedIds);
+
+      // A plan with nothing usable in it is a failure, not a result — try
+      // the next provider rather than handing back an empty week.
+      if (days.length === 0) {
+        attempts.push({ provider: provider.name, error: "empty_plan" });
+        continue;
+      }
+
+      return {
+        ok: true,
+        reason: null,
+        provider: provider.name,
+        days,
+        dropped,
+        attempts,
+      };
+    } catch (error) {
+      console.error(
+        `Program generation failed (${provider.name}):`,
+        error.message,
+      );
+      attempts.push({ provider: provider.name, error: error.message });
+    }
+  }
+
+  return {
+    ok: false,
+    reason: "all_providers_failed",
+    days: [],
+    dropped: [],
+    attempts,
+  };
 };

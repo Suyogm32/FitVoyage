@@ -60,9 +60,7 @@ const Exercises = ({ setExercises, bodyPart, exercises }) => {
           <ExerciseCard key={index} exercise={exer} setAddExer={setAddExer} />
         ))}
       </Stack>
-      {showPopup && (
-        <AddExercise exerc={addExer} setShowPopup={setShowPopup} />
-      )}
+      {showPopup && <AddExercise exerc={addExer} setShowPopup={setShowPopup} />}
       <Stack mt={"50px"} alignItems={"center"}>
         {exercises?.length > 8 && (
           <Pagination
