@@ -20,7 +20,7 @@ If scope is "day", return exactly one day, using targetDay as its day value.
 Return ONLY valid JSON, no markdown fences:
 {"days":[{"day":"mon","focus":"chest and triceps","exercises":[{"exerciseId":"abc123","sets":3,"reps":[12,10,8]}]}]}`;
 
-const parseResponse = (text) => {
+export const parseResponse = (text) => {
   const cleaned = text
     .trim()
     .replace(/^```(?:json)?/i, "")
@@ -37,8 +37,11 @@ export const generateProgram = async ({
   focus = null,
   weightUnit = "kg",
   provider: requestedProvider,
+  // Test seam: inject stand-in providers instead of resolving real ones.
+  // Production never passes this.
+  chain: injectedChain,
 }) => {
-  const chain = resolveProviderChain(requestedProvider);
+  const chain = injectedChain || resolveProviderChain(requestedProvider);
   if (chain.length === 0) {
     return {
       ok: false,

@@ -12,109 +12,138 @@ import {
 import { generateProgram } from "../utils/programGenerator.js";
 import { listProviders } from "../utils/llm/index.js";
 import { usesWeightEquipment } from "../utils/weightedEquipment.js";
+import { rateLimit, readRateLimit } from "../middleware/rateLimit.js";
 
 const router = Router();
 
 const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
+// Each generation is a paid provider call, and a failed one can retry down the
+// whole chain — so the ceiling is three upstream calls per request.
+const GENERATE_LIMIT = {
+  key: "programGenerate",
+  limit: Number(process.env.PROGRAM_GENERATE_LIMIT) || 10,
+  windowMs: 24 * 60 * 60 * 1000,
+};
+
 router.get("/providers", requireAuth, (req, res) => {
   res.json({ providers: listProviders() });
 });
 
-// POST /api/program/generate  { scope, targetDay?, focus?, provider? }
-// Writes nothing — the user reviews the proposal and applies it separately.
-router.post("/generate", requireAuth, async (req, res) => {
+router.get("/quota", requireAuth, async (req, res) => {
   try {
-    const {
-      scope = "week",
-      targetDay = null,
-      focus = null,
-      provider,
-    } = req.body;
-
-    if (!["week", "day"].includes(scope)) {
-      return res
-        .status(400)
-        .json({ message: "scope must be 'week' or 'day'." });
-    }
-    if (scope === "day" && !DAY_KEYS.includes(targetDay)) {
-      return res
-        .status(400)
-        .json({ message: "targetDay required for scope 'day'." });
-    }
-
-    const user = await User.findById(req.user.dbId)
-      .select("trainingProfile preferredWeightUnit")
-      .lean();
-
-    // No equipment selected is valid — it just means a bodyweight program.
-    const equipment = withBodyweight(user?.trainingProfile?.availableEquipment);
-
-    const matching = await ExerciseDB.find({ equipment: { $in: equipment } })
-      .select("id name bodyPart target equipment gifUrl")
-      .lean();
-
-    if (matching.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "No exercises match your equipment." });
-    }
-
-    const catalogue = selectCatalogue(
-      filterByGoal(matching, user?.trainingProfile?.goal),
-    );
-
-    const result = await generateProgram({
-      trainingProfile: user?.trainingProfile || {},
-      catalogue,
-      scope,
-      targetDay,
-      focus: typeof focus === "string" ? focus.slice(0, 40) : null,
-      weightUnit: user?.preferredWeightUnit || "kg",
-      provider,
-    });
-
-    if (!result.ok) {
-      return res.status(502).json({
-        message:
-          result.reason === "no_provider"
-            ? "No AI provider is configured."
-            : "Our AI coach is busy right now. Please try again in a few minutes.",
-        reason: result.reason,
-        attempts: result.attempts,
-      });
-    }
-
-    const fullById = new Map(
-      matching.map((exercise) => [exercise.id, exercise]),
-    );
-
-    const days = result.days.map((day) => ({
-      ...day,
-      exercises: day.exercises.map((exercise) => {
-        const details = fullById.get(exercise.exerciseId) || {};
-        return {
-          ...exercise,
-          exerciseName: details.name || exercise.exerciseId,
-          exerciseGif: details.gifUrl || "",
-          bodyPart: details.bodyPart || "",
-          equipment: details.equipment || "",
-        };
-      }),
-    }));
-
-    res.json({
-      provider: result.provider,
-      catalogueSize: catalogue.length,
-      days,
-      dropped: result.dropped,
-    });
+    res.json(await readRateLimit(req.user.dbId, GENERATE_LIMIT));
   } catch (error) {
     res
       .status(500)
-      .json({ message: "Error generating program.", error: error.message });
+      .json({ message: "Error reading quota.", error: error.message });
   }
 });
+
+// POST /api/program/generate  { scope, targetDay?, focus?, provider? }
+// Writes nothing — the user reviews the proposal and applies it separately.
+router.post(
+  "/generate",
+  requireAuth,
+  rateLimit(GENERATE_LIMIT),
+  async (req, res) => {
+    try {
+      const {
+        scope = "week",
+        targetDay = null,
+        focus = null,
+        provider,
+      } = req.body;
+
+      if (!["week", "day"].includes(scope)) {
+        return res
+          .status(400)
+          .json({ message: "scope must be 'week' or 'day'." });
+      }
+      if (scope === "day" && !DAY_KEYS.includes(targetDay)) {
+        return res
+          .status(400)
+          .json({ message: "targetDay required for scope 'day'." });
+      }
+
+      const user = await User.findById(req.user.dbId)
+        .select("trainingProfile preferredWeightUnit")
+        .lean();
+
+      // No equipment selected is valid — it just means a bodyweight program.
+      const equipment = withBodyweight(
+        user?.trainingProfile?.availableEquipment,
+      );
+
+      const matching = await ExerciseDB.find({ equipment: { $in: equipment } })
+        .select("id name bodyPart target equipment gifUrl")
+        .lean();
+
+      if (matching.length === 0) {
+        return res
+          .status(400)
+          .json({ message: "No exercises match your equipment." });
+      }
+
+      const catalogue = selectCatalogue(
+        filterByGoal(matching, user?.trainingProfile?.goal),
+      );
+
+      const result = await generateProgram({
+        trainingProfile: user?.trainingProfile || {},
+        catalogue,
+        scope,
+        targetDay,
+        focus: typeof focus === "string" ? focus.slice(0, 40) : null,
+        weightUnit: user?.preferredWeightUnit || "kg",
+        provider,
+      });
+
+      if (!result.ok) {
+        return res.status(502).json({
+          message:
+            result.reason === "no_provider"
+              ? "No AI provider is configured."
+              : "Our AI coach is busy right now. Please try again in a few minutes.",
+          reason: result.reason,
+          attempts: result.attempts,
+        });
+      }
+
+      const fullById = new Map(
+        matching.map((exercise) => [exercise.id, exercise]),
+      );
+
+      const days = result.days.map((day) => ({
+        ...day,
+        exercises: day.exercises.map((exercise) => {
+          const details = fullById.get(exercise.exerciseId) || {};
+          return {
+            ...exercise,
+            exerciseName: details.name || exercise.exerciseId,
+            exerciseGif: details.gifUrl || "",
+            bodyPart: details.bodyPart || "",
+            equipment: details.equipment || "",
+          };
+        }),
+      }));
+
+      res.json({
+        provider: result.provider,
+        catalogueSize: catalogue.length,
+        days,
+        dropped: result.dropped,
+        quota: req.rateLimit
+          ? { limit: req.rateLimit.limit, remaining: req.rateLimit.remaining }
+          : null,
+      });
+    } catch (error) {
+      res
+        .status(500)
+        .json({ message: "Error generating program.", error: error.message });
+    }
+  },
+);
 
 // POST /api/program/apply  { scope, days }
 //
@@ -237,7 +266,7 @@ router.post("/apply", requireAuth, async (req, res) => {
 
     res.json({
       message: "Program applied.",
-      daysApplied: days.map((d) => d.day),
+      daysApplied: validDays.map((d) => d.day),
     });
   } catch (error) {
     res

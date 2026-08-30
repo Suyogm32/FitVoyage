@@ -15,6 +15,7 @@ import { useBodyParts } from "@/lib/bodyParts";
 import ProgramReview from "@/app/components/program/ProgramReview";
 import { useRouter } from "next/navigation";
 import { cardClass } from "@/lib/styles";
+import { useToast } from "@/app/components/ToastProvider";
 
 const textMuted = { color: "hsl(var(--muted-foreground))" };
 
@@ -44,6 +45,14 @@ const GOAL_LABELS = {
   general_fitness: "general fitness",
 };
 
+const formatResetTime = (iso) =>
+  iso
+    ? new Date(iso).toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit",
+      })
+    : "";
+
 const ProgramPage = () => {
   const { profile } = useUserProfile();
   const bodyParts = useBodyParts();
@@ -59,6 +68,8 @@ const ProgramPage = () => {
   const statusTimer = useRef(null);
 
   const router = useRouter();
+  const [quota, setQuota] = useState(null);
+  const toast = useToast();
 
   useEffect(() => {
     if (phase !== "generating") {
@@ -71,6 +82,20 @@ const ProgramPage = () => {
     }, 8000);
     return () => clearInterval(statusTimer.current);
   }, [phase]);
+
+  // Read-only — checking your remaining generations must not consume one.
+  useEffect(() => {
+    let cancelled = false;
+    apiClient
+      .get("/api/program/quota")
+      .then((res) => {
+        if (!cancelled) setQuota(res.data);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const trainingProfile = profile?.trainingProfile || {};
   const profileSummary = [
@@ -86,7 +111,13 @@ const ProgramPage = () => {
   const profileIncomplete =
     !trainingProfile.goal || !trainingProfile.experience;
 
+  const outOfQuota = quota?.remaining === 0;
+
   const generate = async () => {
+    // Regenerating from the review screen must not cost the user the plan
+    // they're already looking at if the second attempt fails.
+    const cameFromReview = phase === "review";
+
     setPhase("generating");
     setError("");
     try {
@@ -95,17 +126,32 @@ const ProgramPage = () => {
         ...(scope === "day" && { targetDay, focus: focus || null }),
       });
       setGenerated(data);
+      if (data.quota) setQuota((prev) => ({ ...prev, ...data.quota }));
       setPhase("review");
     } catch (err) {
       console.error("Generation failed:", err);
-      const reason = err.response?.data?.reason;
-      setError(
-        reason === "all_providers_failed"
-          ? "Our AI coach is busy right now. Please try again in a few minutes."
-          : err.response?.data?.message ||
-              "Something went wrong. Please try again.",
-      );
-      setPhase("configure");
+
+      let message;
+      if (err.response?.status === 429) {
+        const { limit, resetAt } = err.response.data || {};
+        setQuota({ limit, remaining: 0, resetAt });
+        message = `You've used all ${limit} program generations for today. Your next one unlocks at ${formatResetTime(resetAt)}.`;
+      } else if (err.response?.data?.reason === "all_providers_failed") {
+        message =
+          "Our AI coach is busy right now. Please try again in a few minutes.";
+      } else {
+        message =
+          err.response?.data?.message ||
+          "Something went wrong. Please try again.";
+      }
+
+      if (cameFromReview) {
+        toast.error(message);
+        setPhase("review");
+      } else {
+        setError(message);
+        setPhase("configure");
+      }
     }
   };
 
@@ -156,6 +202,7 @@ const ProgramPage = () => {
       <ProgramReview
         generated={generated}
         scope={scope}
+        canRegenerate={!outOfQuota}
         onRegenerate={generate}
         onDiscard={() => setPhase("configure")}
         onApplied={() => router.push("/schedule")}
@@ -239,10 +286,22 @@ const ProgramPage = () => {
         color="error"
         startIcon={<Sparkles size={16} />}
         onClick={generate}
-        disabled={scope === "day" && !focus}
+        disabled={outOfQuota || (scope === "day" && !focus)}
       >
         Generate program
       </Button>
+
+      {quota && (
+        <Typography
+          variant="caption"
+          sx={textMuted}
+          className="block mt-3 text-center"
+        >
+          {quota.remaining > 0
+            ? `${quota.remaining} of ${quota.limit} generations left today`
+            : `No generations left today — resets at ${formatResetTime(quota.resetAt)}`}
+        </Typography>
+      )}
     </div>
   );
 };

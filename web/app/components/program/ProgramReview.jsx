@@ -82,6 +82,7 @@ const buildMergedDays = (generatedDays, currentSchedule, scope) => {
 const ProgramReview = ({
   generated,
   scope,
+  canRegenerate = true,
   onRegenerate,
   onDiscard,
   onApplied,
@@ -365,8 +366,9 @@ const ProgramReview = ({
         </Button>
         <Button
           onClick={onRegenerate}
-          disabled={applying}
+          disabled={applying || !canRegenerate}
           startIcon={<RefreshCw size={15} />}
+          title={canRegenerate ? undefined : "No generations left today"}
         >
           Regenerate
         </Button>

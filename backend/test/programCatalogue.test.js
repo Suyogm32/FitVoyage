@@ -171,3 +171,43 @@ test("a day left with no valid exercises is reported, not silently kept", () => 
   assert.equal(days.length, 0);
   assert.ok(dropped.some((d) => d.reason === "empty_day"));
 });
+
+test("rejects set counts outside 1-10", () => {
+  const plan = {
+    days: [
+      {
+        day: "mon",
+        exercises: [
+          { exerciseId: "real", sets: 0, reps: [] },
+          { exerciseId: "real", sets: 11, reps: Array(11).fill(10) },
+          { exerciseId: "real", sets: 2.5, reps: [10, 10] },
+        ],
+      },
+    ],
+  };
+  const { days, dropped } = validatePlan(plan, ["real"]);
+  assert.equal(days.length, 0);
+  assert.equal(dropped.filter((d) => d.reason === "bad_sets").length, 3);
+});
+
+test("reports a response with no days array", () => {
+  for (const plan of [null, {}, { days: "mon" }]) {
+    const { days, dropped } = validatePlan(plan, ["real"]);
+    assert.equal(days.length, 0);
+    assert.equal(dropped[0].reason, "no_days");
+  }
+});
+
+test("truncates an over-long focus label", () => {
+  const plan = {
+    days: [
+      {
+        day: "mon",
+        focus: "x".repeat(200),
+        exercises: [{ exerciseId: "real", sets: 1, reps: [10] }],
+      },
+    ],
+  };
+  const { days } = validatePlan(plan, ["real"]);
+  assert.equal(days[0].focus.length, 80);
+});

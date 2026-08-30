@@ -32,6 +32,15 @@ const UserSchema = new Schema(
     // Opt-in. When false the app never asks readiness/feel questions and
     // shows no suggestions — the coach is invisible.
     coachMode: { type: Boolean, default: false },
+    // Fixed-window counters for rate-limited endpoints. Declared explicitly
+    // rather than as a free-form Map because Mongoose's strict mode silently
+    // drops $set on undeclared paths — a new limiter needs a field here.
+    rateLimits: {
+      programGenerate: {
+        windowStart: { type: Date, default: null },
+        count: { type: Number, default: 0 },
+      },
+    },
   },
   { timestamps: true },
 );
