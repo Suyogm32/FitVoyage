@@ -9,6 +9,7 @@
 // Deliberately does NOT use estimated 1RM: Epley drifts badly above ~10
 // reps, and progressing off an estimate means deciding from a guess
 // derived from a guess. Only direct observations feed this.
+import { toKg } from "./personalRecords.js";
 
 export const DEFAULT_RULES = [
   {
@@ -18,6 +19,23 @@ export const DEFAULT_RULES = [
     then: { action: "deload", loadDeltaPct: -10, repDelta: 0 },
     explain:
       "Missed your targets two sessions running — backing off to rebuild.",
+  },
+  {
+    id: "reset-after-stall",
+    priority: 15,
+    // The other stall shape: you're *hitting* your targets, so the miss rules
+    // never fire, but hold-when-struggled keeps repeating the same weight.
+    // feel "easy" is excluded — that's someone ignoring the app's advice, and
+    // the right answer for them is to add load, not drop it.
+    when: {
+      usesWeight: { eq: true },
+      sessionsAtLoad: { gte: 4 },
+      hitAllTargets: { eq: true },
+      feel: { in: ["struggled", "just_right"] },
+    },
+    then: { action: "deload", loadDeltaPct: -10, repDelta: 0 },
+    explain:
+      "Four sessions at this weight without moving up. Dropping 10% and building back usually breaks a plateau faster than grinding at it.",
   },
   {
     id: "hold-after-miss",
@@ -131,6 +149,20 @@ const hitAllTargets = (session) => {
   );
 };
 
+// Comparison has to be unit-normalised even though the rest of the engine
+// works in the user's own unit — a session logged in lb and one in kg would
+// otherwise look like different loads. Rounded because toKg produces floats
+// and this is an equality test.
+const topWeightKg = (session) => {
+  const weights = (session.setsCompleted || [])
+    .filter((set) => set.weightUsed != null && set.weightUsed > 0)
+    .map(
+      (set) =>
+        Math.round(toKg(set.weightUsed, set.weightUnit || "kg") * 100) / 100,
+    );
+  return weights.length ? Math.max(...weights) : null;
+};
+
 // sessions: newest first, each { date, feel, setsCompleted }
 export const analyseHistory = (sessions, todayReadiness) => {
   if (!sessions.length) return null;
@@ -149,6 +181,17 @@ export const analyseHistory = (sessions, todayReadiness) => {
     consecutiveHits++;
   }
 
+  // How many of the most recent sessions ran at the same top load. This is
+  // what distinguishes "progressing slowly" from "stuck".
+  let sessionsAtLoad = 0;
+  const lastTop = topWeightKg(last);
+  if (lastTop !== null) {
+    for (const session of sessions) {
+      if (topWeightKg(session) !== lastTop) break;
+      sessionsAtLoad++;
+    }
+  }
+
   return {
     hitAllTargets: hitAllTargets(last),
     // No feel recorded (basic mode, or older logs) reads as neutral rather
@@ -157,6 +200,7 @@ export const analyseHistory = (sessions, todayReadiness) => {
     readiness: todayReadiness || "normal",
     consecutiveMisses,
     consecutiveHits,
+    sessionsAtLoad,
     sessionsLogged: sessions.length,
     lastDate: last.date,
     lastWeights: sets.map((set) => set.weightUsed ?? null),
@@ -229,6 +273,7 @@ export const buildSuggestion = ({
       sessionsLogged: facts.sessionsLogged,
       consecutiveMisses: facts.consecutiveMisses,
       consecutiveHits: facts.consecutiveHits,
+      sessionsAtLoad: facts.sessionsAtLoad,
       feel: facts.feel,
     },
   };

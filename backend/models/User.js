@@ -32,6 +32,20 @@ const UserSchema = new Schema(
     // Opt-in. When false the app never asks readiness/feel questions and
     // shows no suggestions — the coach is invisible.
     coachMode: { type: Boolean, default: false },
+    // Display-only opt-in, deliberately separate from coachMode. coachMode
+    // changes what the app asks you; this only changes what it shows you.
+    // Off by default: volume drops during a planned deload, which reads as
+    // failure to anyone who doesn't already know that.
+    advancedStats: { type: Boolean, default: false },
+    // Deload state is stored, not derived. A deload lowers volume on purpose,
+    // so the detector has to know the drop was planned — otherwise it reads
+    // its own advice as fresh evidence. Same principle as effective dating:
+    // you need to know *why* the data looks like this.
+    deload: {
+      suggestedOn: { type: Date, default: null },
+      dismissedOn: { type: Date, default: null },
+      acceptedOn: { type: Date, default: null },
+    },
     // Fixed-window counters for rate-limited endpoints. Declared explicitly
     // rather than as a free-form Map because Mongoose's strict mode silently
     // drops $set on undeclared paths — a new limiter needs a field here.

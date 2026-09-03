@@ -6,6 +6,11 @@ const ExerciseSchema = new Schema({
   exerciseName: { type: String, default: "" },
   exerciseGif: { type: String, default: "" },
   unplanned: { type: Boolean, default: false },
+  // Set when this exercise stood in for a scheduled one — the machine was
+  // busy, the movement hurt today, whatever. Holds the ExerciseDB id of what
+  // it replaced. Lets the scheduled entry count as satisfied instead of
+  // penalising the user's completion rate for making a sensible call.
+  substitutedFor: { type: String, default: null },
   // Coach input: RPE in three buckets rather than a 1-10 scale, because a
   // ten-point picker per exercise is friction people abandon. Null for
   // anyone not in coach mode.

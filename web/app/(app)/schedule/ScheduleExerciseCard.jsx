@@ -5,6 +5,7 @@ import apiClient from "@/lib/apiClient";
 import EditExerciseModal from "./EditExerciseModal";
 import ConfirmDialog from "@/app/components/ConfirmDialog";
 import { useToast } from "@/app/components/ToastProvider";
+import Link from "next/link";
 
 const ScheduleExerciseCard = ({ exercise, day, onChanged }) => {
   const [removing, setRemoving] = useState(false);
@@ -58,20 +59,28 @@ const ScheduleExerciseCard = ({ exercise, day, onChanged }) => {
       {/* bg-muted rather than bg-card — nested inside a card, it needs to
           read as a distinct surface in both light and dark. */}
       <div className="group relative flex gap-3 p-3 rounded-xl bg-muted">
-        <img
-          src={exercise.exerciseGif}
-          alt=""
-          loading="lazy"
-          className="w-16 h-16 rounded-lg bg-white object-cover shrink-0"
-        />
+        <Link
+          href={`/exercise/${exercise.exerciseId}`}
+          className="shrink-0"
+          title={`About ${exercise.exerciseName}`}
+        >
+          <img
+            src={exercise.exerciseGif}
+            alt=""
+            loading="lazy"
+            className="w-20 h-20 rounded-lg bg-white object-cover hover:opacity-80 transition-opacity"
+          />
+        </Link>
 
         <div className="flex-1 min-w-0">
           {/* pr-14 keeps the name clear of the action buttons, which sit in
               the top-right corner rather than taking a row of their own. */}
-          <p className="capitalize font-medium leading-snug pr-14">
+          <Link
+            href={`/exercise/${exercise.exerciseId}`}
+            className="block capitalize font-medium leading-snug pr-14 hover:opacity-70"
+          >
             {exercise.exerciseName}
-          </p>
-
+          </Link>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2 text-sm text-muted-foreground">
             <span>
               {exercise.numberOfSets}{" "}

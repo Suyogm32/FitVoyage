@@ -17,6 +17,9 @@ import { useDayFocus } from "@/lib/useDayFocus";
 import { buildGreeting } from "@/lib/greeting";
 import { useAuth } from "@/app/api/Authprovider/Authprovider";
 import { useToast } from "@/app/components/ToastProvider";
+import SubstitutePanel from "@/app/components/MyWorkout/SubstitutePanel";
+import DeloadBanner from "@/app/components/MyWorkout/DeloadBanner";
+import { useDeloadAdvisory } from "@/lib/useDeloadAdvisory";
 
 import {
   DndContext,
@@ -43,6 +46,7 @@ const MyWorkout = () => {
   const [showAdHoc, setShowAdHoc] = useState(false);
   const [weekRefreshTrigger, setWeekRefreshTrigger] = useState(0);
   const toast = useToast();
+  const [swapping, setSwapping] = useState(null);
 
   const { stats } = useProgress({
     referenceDate: selectedDate,
@@ -64,6 +68,9 @@ const MyWorkout = () => {
 
   const { dayFocus } = useDayFocus();
   const { user } = useAuth();
+
+  const { data: advisory, reload: reloadAdvisory } =
+    useDeloadAdvisory(coachMode);
 
   const loadExercises = useCallback(async () => {
     try {
@@ -104,6 +111,7 @@ const MyWorkout = () => {
         date: formattedDate,
         day: dayKey,
         exercise_ID: modalExercise.exerciseId,
+        substitutedFor: modalExercise.substitutedFor || null,
         setsCompleted,
         feel,
       });
@@ -115,6 +123,20 @@ const MyWorkout = () => {
       console.error("Error saving log:", error);
       toast.error("Couldn't save that log. Please try again.");
     }
+  };
+
+  // Picking a substitute keeps the original's sets, targets and weights — you
+  // are doing the same work with a different tool, so the plan shouldn't
+  // change. Only the identity does, plus the pointer back to what it replaced.
+  const handlePickSubstitute = (original, substitute) => {
+    setSwapping(null);
+    setModalExercise({
+      ...original,
+      exerciseId: substitute.id,
+      exerciseName: substitute.name,
+      exerciseGif: substitute.gifUrl,
+      substitutedFor: original.exerciseId,
+    });
   };
 
   const refreshAfterAdHoc = () => {
@@ -168,65 +190,81 @@ const MyWorkout = () => {
       </div>
       {/* Only for today — "how are you feeling" is a present-tense question,
           and coach mode users opted into being asked. */}
+      {coachMode && isToday && advisory && (
+        <div className="mb-6">
+          <DeloadBanner advisory={advisory} onChanged={reloadAdvisory} />
+        </div>
+      )}
+
       {coachMode && isToday && (
         <div className="mb-6">
           <ReadinessCheckIn date={formattedDate} day={dayKey} />
         </div>
       )}
 
-      <div className="flex flex-col gap-8 md:flex-row items-start">
-        <Calender
-          className="flex flex-auto"
-          setSelectedDate={setSelectedDate}
-        />
-        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-          <WorkoutColumn
-            id="todo-column"
-            title="Workout Schedule"
-            action={
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={() => setShowAdHoc(true)}
-              >
-                Log extra
-              </Button>
-            }
-          >
-            {todo.length > 0 ? (
-              todo.map((exercise) => (
-                <WorkoutCard
-                  key={exercise._id}
-                  exercise={exercise}
-                  onLog={setModalExercise}
-                  onEdit={setModalExercise}
-                  suggestion={suggestions[exercise.exerciseId]}
-                  onApplySuggestion={applySuggestion}
-                />
-              ))
-            ) : (
-              <p>No exercises scheduled for this day.</p>
-            )}
-          </WorkoutColumn>
-          <WorkoutColumn id="done-column" title="Completed">
-            {done.length > 0 ? (
-              done.map((exercise) => (
-                <WorkoutCard
-                  key={exercise._id}
-                  exercise={exercise}
-                  onLog={setModalExercise}
-                  onEdit={setModalExercise}
-                  suggestion={suggestions[exercise.exerciseId]}
-                />
-              ))
-            ) : (
-              <p>
-                Drag a card here, or tap &quot;Log Sets&quot;, once you complete
-                an exercise.
-              </p>
-            )}
-          </WorkoutColumn>
-        </DndContext>
+      {/* Calendar sits beside the columns only on xl. Below that it goes on
+          top, so the two workout columns get the full width instead of a
+          third each — DndContext renders no DOM node, so without the inner
+          wrapper its columns were flex siblings of the calendar. */}
+      <div className="flex flex-col xl:flex-row gap-6 items-start">
+        <div className="w-full xl:w-auto xl:shrink-0">
+          <Calender setSelectedDate={setSelectedDate} />
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-6 w-full flex-1 items-start">
+          <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+            <WorkoutColumn
+              id="todo-column"
+              title="Workout Schedule"
+              action={
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => setShowAdHoc(true)}
+                >
+                  Log extra
+                </Button>
+              }
+            >
+              {todo.length > 0 ? (
+                todo.map((exercise) => (
+                  <WorkoutCard
+                    key={exercise._id}
+                    exercise={exercise}
+                    onLog={setModalExercise}
+                    onEdit={setModalExercise}
+                    onSwap={setSwapping}
+                    suggestion={suggestions[exercise.exerciseId]}
+                    onApplySuggestion={applySuggestion}
+                  />
+                ))
+              ) : (
+                <p className="text-muted-foreground">
+                  No exercises scheduled for this day.
+                </p>
+              )}
+            </WorkoutColumn>
+
+            <WorkoutColumn id="done-column" title="Completed">
+              {done.length > 0 ? (
+                done.map((exercise) => (
+                  <WorkoutCard
+                    key={exercise._id}
+                    exercise={exercise}
+                    onLog={setModalExercise}
+                    onEdit={setModalExercise}
+                    suggestion={suggestions[exercise.exerciseId]}
+                  />
+                ))
+              ) : (
+                <p className="text-muted-foreground">
+                  Drag a card here, or tap &quot;Log sets&quot;, once you
+                  complete an exercise.
+                </p>
+              )}
+            </WorkoutColumn>
+          </DndContext>
+        </div>
       </div>
 
       <div className="mt-8">
@@ -248,6 +286,13 @@ const MyWorkout = () => {
           coachMode={coachMode}
           onSave={handleSaveLog}
           onClose={() => setModalExercise(null)}
+        />
+      )}
+      {swapping && (
+        <SubstitutePanel
+          exercise={swapping}
+          onPick={handlePickSubstitute}
+          onClose={() => setSwapping(null)}
         />
       )}
     </>

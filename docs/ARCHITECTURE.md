@@ -114,6 +114,7 @@ per-user.
 erDiagram
     USER ||--o| WORKOUTSCHEDULE : "has one"
     USER ||--o{ EXERCISELOG : "has many (one per date)"
+    USER ||--o{ BODYWEIGHT : "has many (one per day)"
     EXERCISEDB ||..o{ EXERCISEDETAILS : "referenced by exerciseId"
     EXERCISEDB ||..o{ LOGGEDEXERCISE : "referenced by exerciseId"
 
@@ -174,7 +175,18 @@ erDiagram
         array secondaryMuscles
         array instructions
     }
+
+    BODYWEIGHT {
+        ObjectId user FK
+        date date "UTC midnight, unique per user"
+        number weight "ALWAYS kilograms"
+    }
 ```
+
+`trainingProfile.bodyWeight` still exists on `USER` but is **deprecated** — it is
+only a fallback for accounts that set a weight before the log existed. Read it
+through `resolveCurrentWeightKg`, never directly. `goalWeight` stays on the
+profile: a target is not a measurement.
 
 `trainingProfile` holds goal, experience, daysPerWeek, availableEquipment,
 bodyWeight and goalWeight. It exists to feed program generation, not to be
@@ -403,6 +415,55 @@ Semantic status colours (`--success`, `--info`, `--warning`) sit **outside** the
 thing whichever accent the user picks.
 
 ---
+
+## Measurement and history
+
+Two collections feed the progress dashboard beyond completion tracking.
+
+**Body weight** (`BodyWeight`) — one document per user per calendar day, upserted,
+so logging twice replaces rather than duplicates. Stored in **kilograms always**,
+converted once on write and back to the user's preferred unit on read.
+
+The trend shown to the user is the difference between the **mean of the last 7
+days and the mean of the 7 days before that**, not the last two readings. Daily
+body weight swings a kilo or more on water and food alone; a naive delta reports
+noise as progress. When either window is empty the trend is `null`, not zero —
+"not enough history" and "no change" are different answers.
+
+**Volume** (`utils/volume.js`, read from `ExerciseLog`) — tonnage is
+`reps × load`, bucketed into Sunday-start weeks with empty weeks included so the
+chart has a continuous axis.
+
+Bodyweight sets contribute **reps and sets but no tonnage**. We have a body weight
+log and could multiply push-ups by it — deliberately not done, see `DECISIONS.md`
+§17. Volume is behind the `advancedStats` opt-in (§15).
+
+```mermaid
+flowchart LR
+    LOG[("ExerciseLog")] --> VOL["weeklyVolume<br/>bucket by week,<br/>join bodyPart"]
+    LOG --> HIST["exerciseHistory<br/>filter by exerciseId,<br/>top set per session"]
+    BW[("BodyWeight")] --> TREND["summariseTrend<br/>7-day vs prior 7-day mean"]
+    VOL --> API["/api/history/volume"]
+    HIST --> API2["/api/history/exercise/:id"]
+    TREND --> API3["/api/bodyweight"]
+    API --> CHART["TimeSeriesChart<br/>shared SVG, no chart library"]
+    API2 --> CHART
+    API3 --> CHART
+```
+
+### Date formats
+
+Two live in the codebase, and the split is deliberate rather than accidental:
+
+- `ExerciseLog.date` is a **`"DD/MM/YY"` string**. Legacy, and a known wart — it
+  can't be range-queried and sorts wrong lexically (`"01/09/26"` precedes
+  `"30/08/26"`). Every consumer parses it with dayjs `customParseFormat` in strict
+  mode. Not worth migrating while it has this many readers.
+- **New collections and endpoints use real dates.** `BodyWeight.date` is a `Date`
+  at UTC midnight; `/api/history/*` emits **ISO strings** and lets the client
+  format them.
+
+When adding an endpoint, emit ISO. When reading `ExerciseLog`, parse strictly.
 
 ## Conventions
 

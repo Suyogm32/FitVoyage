@@ -65,39 +65,37 @@ router.get("/", requireAuth, async (req, res) => {
       const loggedExercise = dateLog?.exercises?.find(
         (ex) => ex.exercise_ID === exercise.exerciseId,
       );
+      // Nothing logged against this exercise directly — but something may
+      // have been logged *in place of* it. That counts as done.
+      const substitute = loggedExercise
+        ? null
+        : dateLog?.exercises?.find(
+            (ex) => ex.substitutedFor === exercise.exerciseId,
+          );
+
+      const effective = loggedExercise || substitute;
+
       return {
         ...exercise,
         unplanned: false,
-        status: computeStatus(exercise, loggedExercise),
-        setsCompleted: loggedExercise?.setsCompleted || [],
+        status: computeStatus(exercise, effective),
+        setsCompleted: effective?.setsCompleted || [],
+        substitutedBy: substitute
+          ? {
+              exerciseId: substitute.exercise_ID,
+              exerciseName: substitute.exerciseName || substitute.exercise_ID,
+            }
+          : null,
       };
     });
 
-    // Anything logged that wasn't on the plan for this date — off-plan
-    // substitutions, extra work, rest-day sessions. These have no schedule
-    // entry, so their shape is synthesised from the log itself.
     const scheduledIds = new Set(daySchedule.map((ex) => ex.exerciseId));
-    const unplanned = (dateLog?.exercises || [])
-      .filter((ex) => !scheduledIds.has(ex.exercise_ID))
-      .map((ex) => {
-        const sets = ex.setsCompleted || [];
-        return {
-          _id: ex._id,
-          exerciseId: ex.exercise_ID,
-          exerciseName: ex.exerciseName || ex.exercise_ID,
-          exerciseGif: ex.exerciseGif || "",
-          numberOfSets: sets.length,
-          targetReps: sets.map((s) => s.targetReps),
-          usesWeight: sets.some(
-            (s) => s.weightUsed !== null && s.weightUsed !== undefined,
-          ),
-          targetWeight: sets.map((s) => s.targetWeight ?? 0),
-          weightUnit: sets[0]?.weightUnit || "kg",
-          unplanned: true,
-          status: computeStatus({ numberOfSets: sets.length }, ex),
-          setsCompleted: sets,
-        };
-      });
+    const unplanned = (dateLog?.exercises || []).filter(
+      (ex) =>
+        !scheduledIds.has(ex.exercise_ID) &&
+        // Substitutes are already represented by the entry they replaced.
+        !(ex.substitutedFor && scheduledIds.has(ex.substitutedFor)),
+    );
 
     res.json([...merged, ...unplanned]);
   } catch (error) {
@@ -110,7 +108,8 @@ router.get("/", requireAuth, async (req, res) => {
 router.post("/", requireAuth, async (req, res) => {
   try {
     const userId = req.user.dbId;
-    const { date, day, exercise_ID, setsCompleted, feel } = req.body;
+    const { date, day, exercise_ID, setsCompleted, feel, substitutedFor } =
+      req.body;
 
     if (
       !date ||
@@ -145,6 +144,24 @@ router.post("/", requireAuth, async (req, res) => {
       isActiveOn(ex, parsedDate),
     );
     const planned = daySchedule.find((ex) => ex.exerciseId === exercise_ID);
+
+    // A substitution has to stand in for something actually on the plan for
+    // that day, and can't stand in for itself. Validated against the
+    // effective schedule rather than trusted from the client — same rule as
+    // `planned` above.
+    let safeSubstitutedFor = null;
+    if (substitutedFor) {
+      const target = daySchedule.find(
+        (ex) =>
+          ex.exerciseId === substitutedFor && ex.exerciseId !== exercise_ID,
+      );
+      if (!target) {
+        return res
+          .status(400)
+          .json({ message: "substitutedFor must be scheduled for this day." });
+      }
+      safeSubstitutedFor = substitutedFor;
+    }
 
     let exerciseName;
     let exerciseGif;
@@ -186,14 +203,18 @@ router.post("/", requireAuth, async (req, res) => {
       exerciseEntry.setsCompleted = setsCompleted;
       exerciseEntry.exerciseName = exerciseName;
       exerciseEntry.exerciseGif = exerciseGif;
-      exerciseEntry.unplanned = !planned;
+      // A substitute isn't "extra" work — it replaced planned work, so it
+      // shouldn't be badged as unplanned or counted as a bonus exercise.
+      exerciseEntry.unplanned = !planned && !safeSubstitutedFor;
+      exerciseEntry.substitutedFor = safeSubstitutedFor;
       exerciseEntry.feel = safeFeel;
     } else {
       dateEntry.exercises.push({
         exercise_ID,
         exerciseName,
         exerciseGif,
-        unplanned: !planned,
+        unplanned: !planned && !safeSubstitutedFor,
+        substitutedFor: safeSubstitutedFor,
         feel: safeFeel,
         setsCompleted,
       });

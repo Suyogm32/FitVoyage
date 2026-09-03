@@ -10,6 +10,8 @@ import userRoutes from "./routes/user.js";
 import progressRoutes from "./routes/progress.js";
 import coachRoutes from "./routes/coach.js";
 import programRoutes from "./routes/program.js";
+import bodyWeightRoutes from "./routes/bodyWeight.js";
+import historyRoutes from "./routes/history.js";
 
 const app = express();
 
@@ -32,6 +34,8 @@ app.use("/api/user", userRoutes);
 app.use("/api/progress", progressRoutes);
 app.use("/api/coach", coachRoutes);
 app.use("/api/program", programRoutes);
+app.use("/api/bodyweight", bodyWeightRoutes);
+app.use("/api/history", historyRoutes);
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });

@@ -197,6 +197,36 @@ thing on screen, which is also what makes four accents viable at all.
 
 ---
 
+## 8b. Charts use the accent for data and neutral for reference lines
+
+**Corollary to 8, found the hard way.** The body-weight chart shipped with an
+accent-coloured data line and a `--success` green goal line. Suyog flagged that
+red reads as danger, and that weight going *down* is a positive outcome for
+someone cutting.
+
+**The line itself was fine.** A single data series carries no valence — red only
+implies "bad" when contrasted with something implying "good". The mistake was the
+pairing: red line, green target frames your actual weight as the failure state.
+Meaningless for a chart that serves someone bulking and someone cutting equally.
+
+Two concrete failures followed from it, not just a semantic one:
+
+- **A green accent collides.** Green data line, green goal line, same hue. The
+  `--success`/`--info`/`--warning` tokens exist precisely so status colour stays
+  out of the accent's way — and this put them back in the same picture.
+- **Red on green is the worst pairing for colour blindness.** Deuteranopia affects
+  roughly 8% of men; a dashed stroke was the only thing separating the two lines.
+
+**Chosen.** Data series uses `--primary`. Reference lines — goals, targets,
+averages — use `--muted-foreground`. A goal is something to aim at, not something
+to be rewarded for reaching.
+
+**The general rule:** never let a chart's colours decide whether the user's number
+is good news. The same restraint already applied to the trend copy, which says "up
+0.4 kg" rather than "gained", and is never coloured.
+
+---
+
 ## 9. One page, two chromes
 
 **Problem.** "Browse exercises" in the sidebar pointed at `/`, the marketing
@@ -303,3 +333,105 @@ PR, because "you set a record on your first attempt" is noise.
 
 **Cost.** Recomputation on every read. At personal-app data volumes this is
 nothing; if it ever mattered, the answer is a cache, not a stored flag.
+
+---
+
+## 15. A metric earns the default dashboard only if it changes a decision
+
+**Problem.** Training volume — sets × reps × load — was built and shipped straight
+onto the progress dashboard. Suyog's objection: most users can't act on it, so it's
+cosmetic.
+
+**The stronger version of that objection**, which is what settled it: **volume drops
+during a deload, and a deload is correct training.** The number falls exactly when
+someone is doing the right thing. A metric that is ambiguous in the one case where
+it moves most is worse than no metric, because it invites the wrong conclusion at
+the worst moment.
+
+**Options.**
+
+1. Delete it. Honest, but throws away an aggregation that the coach will need.
+2. Show it to everyone with an explanation. Explanations don't survive contact with
+   a dashboard — people read the number, not the caption.
+3. Put it behind an opt-in.
+
+**Chosen: 3**, as `User.advancedStats`, defaulting to false. The card is not
+rendered and `useVolume` skips its request entirely when off — a disabled feature
+shouldn't still cost a round trip.
+
+**Deliberately not folded into `coachMode`.** They look like the same kind of flag
+and aren't: `coachMode` changes what the app *asks* you (readiness and feel prompts
+on every session), while `advancedStats` only changes what it *shows* you. Merging
+them would mean someone who wants a chart starts getting interrogated after every
+set. Behavioural opt-ins and display opt-ins are different things and should stay
+separate flags.
+
+**Named `advancedStats`, not `showVolume`,** so the next display-only metric doesn't
+add a third toggle — but scoped to dashboard display so it can't become a junk
+drawer.
+
+**The rule this establishes:** a metric belongs on the default dashboard only if a
+user would *do something differently* because of it. "Is this data interesting" is
+the wrong filter and is how dashboards become unreadable. Volume earns its place
+back once the coach reads it rather than merely displaying it — an unplanned volume
+drop is a signal; a planned one isn't. Until something interprets it, it stays
+opt-in.
+
+**Also why the toggle's description names the failure mode.** "Show advanced
+stats" would make users guess. Saying that volume drops during a planned deload
+means the people who turn it on already know how to read it.
+
+---
+
+## 16. Body weight is a log, stored in kilograms
+
+**Problem.** `User.trainingProfile.bodyWeight` was a single number. The schema
+comment already called it debt and named the migration: "latest log entry becomes
+current". It also made `deriveDirection` — the cut/bulk/maintain input to program
+generation — a comparison of two static numbers that never moved.
+
+**Chosen.** A `BodyWeight` collection, one document per user per day, unique on
+`{ user, date }` so a second log for the same day upserts rather than duplicates.
+
+**Stored in kilograms, always.** Converted once on write, converted back to the
+user's preferred unit on read. Storing values as entered would mean a user who
+switched from lb to kg gets a chart with half its points in a different unit —
+unfixable after the fact, because nothing records which reading was which.
+
+**A separate collection, not an array on `User`.** `requireAuth` loads the user
+document on every authenticated request; an unbounded array of daily readings
+would bloat the hottest read path in the API.
+
+**Migration: none.** `resolveCurrentWeightKg` reads the newest log entry and falls
+back to the legacy profile field when the log is empty — the same shape as
+`scheduleActive`'s fallback to `_id.getTimestamp()` (§1). New feature, old data,
+no backfill script.
+
+**The trend is two seven-day averages, not last-minus-previous.** Daily weight
+swings a kilo on water and food. A naive delta reports noise as progress, and
+that's the number people make bad decisions on. When either window is empty the
+answer is `null`, not `0` — "not enough history" is not "no change".
+
+---
+
+## 17. Tonnage counts loaded work only
+
+**Problem.** Volume is `reps × load`. Bodyweight exercises record no load, so a
+programme of push-ups and pull-ups reports zero volume.
+
+**The tempting fix.** We now have a body weight log (§16), so push-ups could be
+multiplied by the user's body weight and folded into the total.
+
+**Why not.** Body weight changes for reasons unrelated to training. Someone in a
+cut would show falling "volume" on identical work — the metric would move because
+of their diet, not their training. Two different quantities added into one number
+isn't a total, it's a category error with a decimal point.
+
+**Chosen.** Tonnage counts loaded sets. Sets and reps are reported alongside it,
+so bodyweight work is visible in the units that actually fit it, and the caption
+under the chart says the exclusion out loud.
+
+**The general rule:** when a metric excludes something, say so **where it is
+displayed**, not only in a code comment. A user whose training is mostly
+calisthenics sees a low number and concludes the app is broken — which is a
+support problem created entirely by a missing sentence.

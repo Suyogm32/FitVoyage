@@ -13,6 +13,8 @@ import { generateProgram } from "../utils/programGenerator.js";
 import { listProviders } from "../utils/llm/index.js";
 import { usesWeightEquipment } from "../utils/weightedEquipment.js";
 import { rateLimit, readRateLimit } from "../middleware/rateLimit.js";
+import { BodyWeight } from "../models/BodyWeight.js";
+import { resolveCurrentWeightKg } from "../utils/bodyWeight.js";
 
 const router = Router();
 
@@ -66,9 +68,25 @@ router.post(
           .json({ message: "targetDay required for scope 'day'." });
       }
 
-      const user = await User.findById(req.user.dbId)
-        .select("trainingProfile preferredWeightUnit")
-        .lean();
+      const [user, weightEntries] = await Promise.all([
+        User.findById(req.user.dbId)
+          .select("trainingProfile preferredWeightUnit")
+          .lean(),
+        BodyWeight.find({ user: req.user.dbId })
+          .sort({ date: -1 })
+          .limit(1)
+          .lean(),
+      ]);
+      // deriveDirection needs a current weight. The log is the source of truth
+      // now; trainingProfile.bodyWeight is only a fallback for users who
+      // haven't logged one yet.
+      const trainingProfile = {
+        ...(user?.trainingProfile || {}),
+        bodyWeight: resolveCurrentWeightKg(
+          weightEntries,
+          user?.trainingProfile,
+        ),
+      };
 
       // No equipment selected is valid — it just means a bodyweight program.
       const equipment = withBodyweight(
@@ -86,11 +104,11 @@ router.post(
       }
 
       const catalogue = selectCatalogue(
-        filterByGoal(matching, user?.trainingProfile?.goal),
+        filterByGoal(matching, trainingProfile.goal),
       );
 
       const result = await generateProgram({
-        trainingProfile: user?.trainingProfile || {},
+        trainingProfile: trainingProfile || {},
         catalogue,
         scope,
         targetDay,

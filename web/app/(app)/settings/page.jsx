@@ -15,6 +15,7 @@ import apiClient from "@/lib/apiClient";
 import { useUserProfile } from "@/lib/useUserProfile";
 import { cardClass } from "@/lib/styles";
 import AppearanceCard from "@/app/components/AppearanceCard";
+import Link from "next/link";
 
 const textMuted = { color: "hsl(var(--muted-foreground))" };
 
@@ -66,7 +67,6 @@ const SettingsPage = () => {
       goal: tp.goal || "",
       experience: tp.experience || "",
       daysPerWeek: tp.daysPerWeek ?? "",
-      bodyWeight: tp.bodyWeight ?? "",
       goalWeight: tp.goalWeight ?? "",
       availableEquipment: tp.availableEquipment || [],
     });
@@ -95,7 +95,6 @@ const SettingsPage = () => {
         ...(draft.daysPerWeek !== "" && {
           daysPerWeek: Number(draft.daysPerWeek),
         }),
-        bodyWeight: draft.bodyWeight === "" ? null : Number(draft.bodyWeight),
         goalWeight: draft.goalWeight === "" ? null : Number(draft.goalWeight),
         availableEquipment: draft.availableEquipment,
       },
@@ -165,6 +164,26 @@ const SettingsPage = () => {
       </div>
 
       <div className={`${cardClass} p-5`}>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <Typography variant="h6">Advanced stats</Typography>
+            <Typography variant="body2" sx={textMuted}>
+              Adds training volume — sets × reps × load — to your dashboard.
+              Useful if you already think in tonnage; easy to misread if you
+              don&apos;t, since volume drops during a planned deload. Off by
+              default.
+            </Typography>
+          </div>
+          <Switch
+            color="error"
+            checked={Boolean(profile.advancedStats)}
+            onChange={(e) => save({ advancedStats: e.target.checked })}
+            disabled={saving}
+          />
+        </div>
+      </div>
+
+      <div className={`${cardClass} p-5`}>
         <Typography variant="h6">Training profile</Typography>
         <Typography variant="body2" sx={textMuted} className="mb-4">
           Used to generate workout programs that fit your goal and setup.
@@ -210,17 +229,6 @@ const SettingsPage = () => {
             }
           />
 
-          <div />
-
-          <TextField
-            label={`Current body weight (${unit})`}
-            type="number"
-            size="small"
-            inputProps={{ min: 0, step: 0.5 }}
-            value={draft.bodyWeight}
-            onChange={(e) => setDraft({ ...draft, bodyWeight: e.target.value })}
-          />
-
           <TextField
             label={`Goal body weight (${unit})`}
             type="number"
@@ -230,6 +238,14 @@ const SettingsPage = () => {
             onChange={(e) => setDraft({ ...draft, goalWeight: e.target.value })}
           />
         </div>
+
+        <Typography variant="caption" sx={textMuted} className="block mt-3">
+          Your current weight now comes from your{" "}
+          <Link href="/progress" style={{ color: "hsl(var(--primary))" }}>
+            weight log
+          </Link>{" "}
+          — one entry per day, so the trend is real.
+        </Typography>
 
         <div className="mt-6">
           <Typography variant="body2" className="mb-2">

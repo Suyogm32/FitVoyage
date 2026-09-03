@@ -3,7 +3,7 @@ import { requireAuth } from "../middleware/auth.js";
 import { User } from "../models/User.js";
 
 const PROFILE_FIELDS =
-  "name email preferredWeightUnit weeklyGoals coachMode trainingProfile";
+  "name email preferredWeightUnit weeklyGoals coachMode advancedStats trainingProfile";
 
 const GOALS = ["build_muscle", "get_stronger", "general_fitness"];
 const EXPERIENCE_LEVELS = ["beginner", "intermediate", "advanced"];
@@ -71,8 +71,13 @@ const sanitiseTrainingProfile = (input) => {
 
 router.patch("/", requireAuth, async (req, res) => {
   try {
-    const { preferredWeightUnit, weeklyGoals, coachMode, trainingProfile } =
-      req.body;
+    const {
+      preferredWeightUnit,
+      weeklyGoals,
+      coachMode,
+      advancedStats,
+      trainingProfile,
+    } = req.body;
 
     if (preferredWeightUnit && !["kg", "lb"].includes(preferredWeightUnit)) {
       return res
@@ -120,6 +125,7 @@ router.patch("/", requireAuth, async (req, res) => {
         $set: {
           ...(preferredWeightUnit && { preferredWeightUnit }),
           ...(typeof coachMode === "boolean" && { coachMode }),
+          ...(typeof advancedStats === "boolean" && { advancedStats }),
           ...(sanitisedGoals !== undefined && { weeklyGoals: sanitisedGoals }),
           ...trainingProfileUpdates,
         },

@@ -260,7 +260,51 @@ Removals ship to production and pollute `npm audit` forever.
 
 ---
 
-## 14. Security issues found and fixed
+## 14. Spreading an object over explicit keys
+
+**Found in:** `exerciseHistory` in `utils/volume.js`.
+
+```js
+sessions.push({
+  sets: (exercise.setsCompleted || []).map(...),  // an array
+  ...totals,                                      // totals.sets is a NUMBER
+});
+```
+
+`summariseExerciseEntry` returns `sets` as a *count*. Because the spread came
+last, it silently replaced the array. Everything downstream that called
+`session.sets.map()` threw.
+
+**Fix.** Destructure and rename at the boundary:
+`const { sets: setCount, ...totals } = summariseExerciseEntry(exercise)`.
+
+**Spotting it.** A spread placed after explicit keys in the same literal. The root
+cause here was naming, not the spread — two different quantities were both called
+`sets`. If either had been `setCount` from the start there'd have been no
+collision to hide. Be suspicious of a short noun that could plausibly mean both a
+collection and its size.
+
+---
+
+## 15. Stringly-typed dates
+
+**Found in:** `ExerciseLog.date`, stored as `"DD/MM/YY"`.
+
+That format can't be range-queried in Mongo and sorts wrong lexically —
+`"01/09/26"` precedes `"30/08/26"`. Every consumer has to parse with dayjs
+`customParseFormat` in strict mode before comparing, and one forgotten parse is a
+silently wrong ordering rather than an error.
+
+**Not migrated** — it has too many readers to be worth it right now. But
+`BodyWeight.date` is a real `Date`, and `/api/history/*` emits ISO strings.
+
+**The rule going forward:** new collections store `Date`, new endpoints emit ISO,
+the client formats. A date that has to be parsed before it can be compared isn't a
+date, it's a label.
+
+---
+
+## 16. Security issues found and fixed
 
 Recorded so they stay fixed.
 
@@ -298,11 +342,18 @@ Before opening a PR:
 **State**
 - [ ] No effect exists purely to sync one state from another
 - [ ] Derived values are computed, not stored
+- [ ] No spread placed after explicit keys it could overwrite
 
 **API**
 - [ ] One response shape per route
 - [ ] Identity comes from `req.user.dbId`, never the request body
 - [ ] Date and enum inputs are validated server-side, not just constrained in the UI
+- [ ] New endpoints emit ISO dates; `ExerciseLog` dates are parsed strictly
+- [ ] Units are converted at one boundary, not per consumer
+
+**Metrics**
+- [ ] The number would change what a user does — otherwise it's opt-in
+- [ ] Anything the metric excludes is stated where it's displayed
 
 **Styling**
 - [ ] No hex codes or `bg-white`/`text-black` outside deliberate exceptions

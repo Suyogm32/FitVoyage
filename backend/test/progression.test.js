@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildSuggestion } from "../utils/progression.js";
+import { buildSuggestion, analyseHistory } from "../utils/progression.js";
 
 // Helpers keep the intent of each case visible instead of burying it in
 // object literals.
@@ -106,4 +106,89 @@ test("a missing feel is treated as neutral, not as a blocker", () => {
   const result = suggest([session([set(1, 10, 10, 40)], null)]);
   assert.equal(result.action, "increase");
   assert.equal(result.ruleId, "increase-standard");
+});
+
+test("counts consecutive sessions at the same top load", () => {
+  const at = (weight) => ({
+    date: "01/01/26",
+    feel: "just_right",
+    setsCompleted: [
+      { targetReps: 10, repsCompleted: 10, weightUsed: weight - 5 },
+      { targetReps: 10, repsCompleted: 10, weightUsed: weight },
+    ],
+  });
+  const facts = analyseHistory([at(60), at(60), at(60), at(55)], "normal");
+  assert.equal(facts.sessionsAtLoad, 3);
+});
+
+test("a load counted in pounds matches the same load in kilos", () => {
+  const kg = {
+    date: "01/01/26",
+    setsCompleted: [
+      { targetReps: 5, repsCompleted: 5, weightUsed: 45.36, weightUnit: "kg" },
+    ],
+  };
+  const lb = {
+    date: "01/01/26",
+    setsCompleted: [
+      { targetReps: 5, repsCompleted: 5, weightUsed: 100, weightUnit: "lb" },
+    ],
+  };
+  assert.equal(analyseHistory([kg, lb], "normal").sessionsAtLoad, 2);
+});
+
+test("four sessions stuck at one weight triggers a reset, not another hold", () => {
+  const stuck = {
+    date: "01/01/26",
+    feel: "struggled",
+    setsCompleted: [{ targetReps: 8, repsCompleted: 8, weightUsed: 60 }],
+  };
+  const result = buildSuggestion({
+    sessions: [stuck, stuck, stuck, stuck],
+    todayReadiness: "normal",
+  });
+  assert.equal(result.ruleId, "reset-after-stall");
+  assert.equal(result.action, "deload");
+  assert.ok(result.suggestedWeights[0] < 60);
+});
+
+// Someone ignoring the app's advice needs load added, not taken away.
+test("a stall that feels easy still gets an increase", () => {
+  const easy = {
+    date: "01/01/26",
+    feel: "easy",
+    setsCompleted: [{ targetReps: 8, repsCompleted: 8, weightUsed: 60 }],
+  };
+  const result = buildSuggestion({
+    sessions: [easy, easy, easy, easy, easy],
+    todayReadiness: "normal",
+  });
+  assert.equal(result.action, "increase");
+});
+
+test("three sessions at a weight is not yet a stall", () => {
+  const session = {
+    date: "01/01/26",
+    feel: "just_right",
+    setsCompleted: [{ targetReps: 8, repsCompleted: 8, weightUsed: 60 }],
+  };
+  const result = buildSuggestion({
+    sessions: [session, session, session],
+    todayReadiness: "normal",
+  });
+  assert.notEqual(result.ruleId, "reset-after-stall");
+});
+
+// Bodyweight work has no load to be stuck at; it progresses by reps.
+test("bodyweight exercises never trigger the stall rule", () => {
+  const session = {
+    date: "01/01/26",
+    feel: "struggled",
+    setsCompleted: [{ targetReps: 15, repsCompleted: 15, weightUsed: null }],
+  };
+  const result = buildSuggestion({
+    sessions: [session, session, session, session, session],
+    todayReadiness: "normal",
+  });
+  assert.notEqual(result.ruleId, "reset-after-stall");
 });

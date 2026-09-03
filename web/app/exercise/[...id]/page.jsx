@@ -7,6 +7,7 @@ import ExerciseVideos from "@/app/components/ExerciseDetails/ExerciseVideos";
 import SimilarExercises from "@/app/components/ExerciseDetails/SimilarExercises";
 import apiClient from "@/lib/apiClient";
 import PageShell from "@/app/components/PageShell";
+import ExerciseHistory from "@/app/components/ExerciseDetails/ExerciseHistory";
 
 const ExerciseDetail = () => {
   const [currentExercise, setCurrentExercise] = useState({});
@@ -50,6 +51,7 @@ const ExerciseDetail = () => {
     // footer when not — so an exercise link is shareable with anyone.
     <PageShell title={currentExercise.name}>
       <Details exerciseDetail={currentExercise} />
+      <ExerciseHistory exerciseId={id} />
       <ExerciseVideos
         exerciseVideosData={exerciseVideosData}
         exerciseName={currentExercise.name}
