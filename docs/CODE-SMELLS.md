@@ -354,6 +354,14 @@ Before opening a PR:
 **Metrics**
 - [ ] The number would change what a user does — otherwise it's opt-in
 - [ ] Anything the metric excludes is stated where it's displayed
+- [ ] A partial period (the current week) is excluded from trend comparisons
+- [ ] "Not enough data" is a distinct answer from "no change" — null, not zero
+
+**Advice**
+- [ ] The user can see which signals fired, not just the conclusion
+- [ ] Acting on advice records that it happened, so the system can't re-detect
+      the change it caused
+- [ ] Advice suggests; it doesn't rewrite the user's data on its own initiative
 
 **Styling**
 - [ ] No hex codes or `bg-white`/`text-black` outside deliberate exceptions

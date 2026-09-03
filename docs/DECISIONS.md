@@ -435,3 +435,93 @@ under the chart says the exclusion out loud.
 displayed**, not only in a code comment. A user whose training is mostly
 calisthenics sees a low number and concludes the app is broken — which is a
 support problem created entirely by a missing sentence.
+
+---
+
+## 18. A substitution satisfies the exercise it replaced
+
+**Problem.** The machine is busy, or the movement hurts today. The only options
+were skip it — denting your completion rate for making a sensible call — or hunt
+1,300 exercises manually.
+
+**Why it isn't an AI feature**, despite looking like judgement: every input is
+structured data we already hold. `target`, `bodyPart`, `equipment`,
+`secondaryMuscles`, and the user's available equipment. Same test as §2 — when the
+inputs are enumerable and the output space is small, it's a query.
+
+**Options for what a swap *means*.**
+
+1. Log it as an unplanned exercise. Zero new code, but the original stays
+   incomplete forever and nothing records that one replaced the other.
+2. Log it with a `substitutedFor` pointer.
+3. Permanently swap the schedule via the versioned PATCH.
+
+**Chosen: 2.** The original counts as satisfied, completion stays honest, and
+repeated swaps become a signal worth acting on later ("you've swapped this four
+times — replace it?"). 3 is wrong as a default: a busy machine on one Tuesday is
+not a programme change.
+
+**The substitute inherits the original's sets, reps and weights.** You're doing
+the same work with a different tool. And because the log keeps the pointer, next
+session's progression still reads the original's history rather than treating this
+as a new exercise with no baseline.
+
+---
+
+## 19. Stall detection as a rule, not a branch
+
+**Problem.** The engine had `deload-after-repeated-misses`, so *failing* was
+handled. The shape it couldn't see: you hit every target, so no miss rule fires,
+but `hold-when-struggled` repeats the same weight indefinitely. Grinding one load
+for months is the most common way lifters waste a training block.
+
+**Chosen.** One new fact (`sessionsAtLoad`) and one new row in `DEFAULT_RULES`.
+No evaluator change, no new operator, no branch in `buildSuggestion`.
+
+**This is the §2 payoff arriving on schedule.** The argument for declarative rules
+was that new behaviour would be data. Two years of that claim being untested ended
+with a rule that took an object literal and a derived fact — a hardcoded `if`
+would have been faster on the day and worse now.
+
+**One subtlety worth keeping.** `sessionsAtLoad` compares loads **normalised to
+kg**. The rest of the engine works in whatever unit the user logs in, which is
+fine within a session — but a user who switches preference mid-programme would
+have 100 and 45.36 read as a load change, silently resetting the stall counter.
+That case only surfaced because a test was written for it.
+
+---
+
+## 20. Deload advice is stored, advisory, and needs two signals
+
+**Problem.** Accumulated fatigue is a week-level phenomenon. The per-exercise
+engine can't see it: it doesn't know that three lifts stalled at once, or that
+volume has climbed five weeks straight, or that you've felt beat up repeatedly.
+
+**Chosen.** A separate assessor above the rule engine, reading three signals —
+readiness, simultaneous stalls, volume trend — and requiring **two of three**.
+
+**Why two.** One signal is noise. A bad night's sleep isn't systemic fatigue and a
+single stalled lift is a problem with that lift. Requiring two is what makes the
+advisory worth reading when it does fire.
+
+**Why the cooldown is correctness, not courtesy.** A deload lowers volume *by
+design*. Without stored state, the detector reads the drop it caused as fresh
+evidence and recommends another one — a loop where the system's own advice becomes
+its input. `User.deload` is therefore stored rather than derived, the same
+principle as effective dating (§1): you have to know *why* the data looks like
+this.
+
+**Why the current week is excluded from the trend.** It's always partial.
+Comparing a two-day-old week against a finished one reports a climb every Sunday
+and a collapse every Monday.
+
+**Why it only advises.** Accepting records a decision and shows guidance; the
+schedule is untouched. Three signals justify raising a question, nowhere near
+rewriting someone's training week on their behalf. Note also that the only
+direction this feature ever pushes is *train less* — an app telling a stranger to
+train harder off three data points is making a claim it can't support.
+
+**And it shows its evidence.** The banner lists the specific signals that fired
+rather than asserting "you seem fatigued", so a user can disagree with the
+reasoning. That's the difference between advice and an oracle, and it's the same
+reason every progression rule carries an `explain` string.

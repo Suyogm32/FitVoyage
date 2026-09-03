@@ -125,7 +125,10 @@ erDiagram
         string name
         string preferredWeightUnit
         array weeklyGoals
-        bool coachMode
+        bool coachMode "asks readiness/feel"
+        bool advancedStats "shows volume"
+        object deload "suggested/dismissed/acceptedOn"
+        object rateLimits "programGenerate window"
         object trainingProfile
     }
 
@@ -161,6 +164,7 @@ erDiagram
         string exerciseName
         string exerciseGif
         bool unplanned
+        string substitutedFor "id this stood in for"
         string feel "easy|just_right|struggled"
         array setsCompleted
     }
@@ -310,6 +314,14 @@ operator vocabulary (`eq`, `neq`, `in`, `gte`, `lte`). First match by priority
 wins. This is what makes them extendable, and eventually user-configurable,
 without touching the evaluator.
 
+**Stall detection is one of those rows.** `reset-after-stall` catches the shape
+the miss rules can't see: you're *hitting* your targets, so nothing fails, but
+`hold-when-struggled` repeats the same weight forever. It reads a
+`sessionsAtLoad` fact — consecutive recent sessions at the same top load,
+normalised to kg so a unit switch mid-programme doesn't read as a load change.
+Adding it required no evaluator change, which is the payoff the declarative
+design was built for.
+
 Two rounding invariants are regression-tested in
 `backend/test/progression.test.js`:
 
@@ -322,6 +334,57 @@ Two rounding invariants are regression-tested in
 `utils/personalRecords.js` and is used only to display PRs.
 
 ---
+
+## Coach: substitution and fatigue
+
+Two things sit alongside the per-exercise engine, at different scopes.
+
+**Substitution** (`utils/substitutes.js`) — "the machine is busy, give me
+something else". A ranked catalogue query, not an AI call: candidates share the
+original's `target`, are filtered to the user's available equipment, and are
+scored on differing equipment (+3, the whole point), overlapping
+`secondaryMuscles` (+1 each, capped), prior familiarity (+2) and matching
+`bodyPart` (+1). Below three candidates it widens from `target` to `bodyPart` —
+the same starvation floor as `MIN_TRIM_THRESHOLD` in the program catalogue.
+
+Logging a substitute writes `substitutedFor` on the log entry. `computeStatus` in
+`mySchedule.js` then treats the scheduled exercise as satisfied, and the
+unplanned-exercise filter excludes the substitute so it isn't listed twice.
+Validated server-side against the day's effective schedule — a client can't point
+it at an arbitrary id.
+
+**Deload advisory** (`utils/deload.js`) — week-level, so it can see what no single
+exercise can.
+
+```mermaid
+flowchart TD
+    R["readiness: beat_up<br/>in 2 of last 4"] --> COUNT
+    S["stalls: 2+ exercises<br/>at sessionsAtLoad >= 4"] --> COUNT
+    V["volume: 3+ consecutive<br/>weekly increases"] --> COUNT
+    COUNT{"2 of 3 signals?"} -->|no| QUIET["say nothing"]
+    COUNT -->|yes| GUARD{"enough history?<br/>outside cooldown?"}
+    GUARD -->|no| QUIET
+    GUARD -->|yes| BANNER["dismissible banner,<br/>lists the signals that fired"]
+    BANNER --> ACCEPT["accept → record acceptedOn"]
+    ACCEPT --> COOL["3-week cooldown"]
+    COOL -.->|"suppresses"| GUARD
+```
+
+Three constraints, each load-bearing:
+
+- **Two signals minimum.** One bad night's sleep isn't systemic fatigue, and one
+  stalled lift is a problem with that lift.
+- **The current week is excluded from the volume trend.** It's always partial —
+  comparing it against a finished week reports a climb every Sunday and a drop
+  every Monday.
+- **The cooldown is required for correctness, not politeness.** A deload lowers
+  volume by design, so without stored state the detector reads the drop it caused
+  as fresh evidence and recommends another. This is why `User.deload` is stored
+  rather than derived — the same reason effective dating exists: you need to know
+  *why* the data looks like this.
+
+Accepting records the decision and shows guidance. It does **not** touch the
+schedule. Three signals justify raising a question, not rewriting someone's week.
 
 ## AI program generation
 
