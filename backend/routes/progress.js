@@ -287,10 +287,7 @@ router.get("/", requireAuth, async (req, res) => {
       prCount,
     });
   } catch (error) {
-    res.status(500).json({
-      message: "Error computing progress stats.",
-      error: error.message,
-    });
+    next(error);
   }
 });
 

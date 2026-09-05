@@ -58,9 +58,7 @@ router.get("/", requireAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error loading weight history.", error: error.message });
+    next(error);
   }
 });
 
@@ -95,9 +93,7 @@ router.post("/", requireAuth, async (req, res) => {
 
     res.status(201).json({ id: entry._id, date: entry.date });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error saving weight.", error: error.message });
+    next(error);
   }
 });
 
@@ -113,9 +109,7 @@ router.delete("/:id", requireAuth, async (req, res) => {
     }
     res.json({ message: "Entry removed." });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error removing entry.", error: error.message });
+    next(error);
   }
 });
 

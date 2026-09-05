@@ -36,9 +36,7 @@ router.get("/quota", requireAuth, async (req, res) => {
   try {
     res.json(await readRateLimit(req.user.dbId, GENERATE_LIMIT));
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error reading quota.", error: error.message });
+    next(error);
   }
 });
 
@@ -156,9 +154,7 @@ router.post(
           : null,
       });
     } catch (error) {
-      res
-        .status(500)
-        .json({ message: "Error generating program.", error: error.message });
+      next(error);
     }
   },
 );
@@ -287,9 +283,7 @@ router.post("/apply", requireAuth, async (req, res) => {
       daysApplied: validDays.map((d) => d.day),
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error applying program.", error: error.message });
+    next(error);
   }
 });
 

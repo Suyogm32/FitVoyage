@@ -77,10 +77,7 @@ router.get("/exercise/:exerciseId", requireAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({
-      message: "Error loading exercise history.",
-      error: error.message,
-    });
+    next(error);
   }
 });
 
@@ -129,9 +126,7 @@ router.get("/volume", requireAuth, async (req, res) => {
       })),
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error computing volume.", error: error.message });
+    next(error);
   }
 });
 

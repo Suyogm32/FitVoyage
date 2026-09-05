@@ -97,9 +97,7 @@ router.get("/suggest", requireAuth, async (req, res) => {
 
     res.json({ coachMode: true, readiness: todayReadiness, suggestions });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error building suggestions.", error: error.message });
+    next(error);
   }
 });
 
@@ -152,9 +150,7 @@ router.get("/substitutes/:exerciseId", requireAuth, async (req, res) => {
       substitutes: rankSubstitutes(original, pool, { loggedIds }),
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error finding substitutes.", error: error.message });
+    next(error);
   }
 });
 
@@ -235,9 +231,7 @@ router.get("/advisory", requireAuth, async (req, res) => {
       acceptedThisWeek: Boolean(acceptedThisWeek),
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error building advisory.", error: error.message });
+    next(error);
   }
 });
 
@@ -263,9 +257,7 @@ router.post("/advisory", requireAuth, async (req, res) => {
 
     res.json({ message: `Deload ${action}ed.` });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error saving advisory.", error: error.message });
+    next(error);
   }
 });
 

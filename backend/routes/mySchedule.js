@@ -99,9 +99,7 @@ router.get("/", requireAuth, async (req, res) => {
 
     res.json([...merged, ...unplanned]);
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error fetching schedule", error: error.message });
+    next(error);
   }
 });
 
@@ -224,9 +222,7 @@ router.post("/", requireAuth, async (req, res) => {
 
     res.json({ message: "Exercise log saved.", exercise_ID, setsCompleted });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error saving exercise log", error: error.message });
+    next(error);
   }
 });
 
@@ -244,9 +240,7 @@ router.get("/readiness", requireAuth, async (req, res) => {
     );
     res.json({ readiness: entry?.readiness || null });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error fetching readiness.", error: error.message });
+    next(error);
   }
 });
 
@@ -292,9 +286,7 @@ router.post("/readiness", requireAuth, async (req, res) => {
 
     res.json({ readiness });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error saving readiness.", error: error.message });
+    next(error);
   }
 });
 
@@ -307,9 +299,7 @@ router.get("/focus", requireAuth, async (req, res) => {
       .lean();
     res.json({ dayFocus: workoutDoc?.dayFocus || {} });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error fetching day focus.", error: error.message });
+    next(error);
   }
 });
 

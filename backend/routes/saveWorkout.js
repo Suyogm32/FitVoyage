@@ -4,11 +4,16 @@ import { Workouts } from "../models/Workouts.js";
 import { activeScheduleOnly } from "../utils/scheduleActive.js";
 
 const router = Router();
+const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
 router.put("/", requireAuth, async (req, res) => {
   try {
     const userId = req.user.dbId;
     const { day, userExercise } = req.body;
+
+    if (!DAY_KEYS.includes(day)) {
+      return res.status(400).json({ message: "Invalid day." });
+    }
 
     // addedOn/removedOn come from the server — never trust client-supplied
     // values here, or the effective-dating guarantee is worthless.
@@ -45,9 +50,7 @@ router.put("/", requireAuth, async (req, res) => {
       });
     }
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error processing request.", error: error.message });
+    next(error);
   }
 });
 
@@ -107,9 +110,7 @@ router.patch("/", requireAuth, async (req, res) => {
       schedule: activeScheduleOnly(workoutSchedule.toObject().schedule),
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error updating exercise.", error: error.message });
+    next(error);
   }
 });
 
@@ -152,13 +153,9 @@ router.delete("/", requireAuth, async (req, res) => {
       schedule: activeScheduleOnly(workoutSchedule.toObject().schedule),
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error removing exercise.", error: error.message });
+    next(error);
   }
 });
-
-const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
 // Setting a day's focus doesn't touch exercises, so it's a plain update —
 // no tombstoning, nothing versioned. A label isn't part of the plan's
@@ -184,9 +181,7 @@ router.patch("/focus", requireAuth, async (req, res) => {
 
     res.json({ dayFocus: workoutDoc.dayFocus });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error saving day focus.", error: error.message });
+    next(error);
   }
 });
 

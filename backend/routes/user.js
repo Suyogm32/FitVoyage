@@ -18,9 +18,7 @@ router.get("/", requireAuth, async (req, res) => {
     }
     res.json(user);
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error fetching profile.", error: error.message });
+    next(error);
   }
 });
 
@@ -135,9 +133,7 @@ router.patch("/", requireAuth, async (req, res) => {
 
     res.json(user);
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error updating profile.", error: error.message });
+    next(error);
   }
 });
 

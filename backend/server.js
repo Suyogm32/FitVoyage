@@ -2,7 +2,9 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
+import mongoose from "mongoose";
 import connectDB from "./config/db.js";
+import { notFound, errorHandler } from "./middleware/errorHandler.js";
 import exerciseDBRoutes from "./routes/exerciseDB.js";
 import myScheduleRoutes from "./routes/mySchedule.js";
 import saveWorkoutRoutes from "./routes/saveWorkout.js";
@@ -37,9 +39,21 @@ app.use("/api/program", programRoutes);
 app.use("/api/bodyweight", bodyWeightRoutes);
 app.use("/api/history", historyRoutes);
 
+// Reports the database too: a process manager or load balancer that only
+// checks "is the port open" will happily route traffic to an instance whose
+// Mongo connection has dropped. readyState 1 is connected.
 app.get("/health", (req, res) => {
-  res.json({ status: "ok" });
+  const dbUp = mongoose.connection.readyState === 1;
+  res.status(dbUp ? 200 : 503).json({
+    status: dbUp ? "ok" : "degraded",
+    db: dbUp ? "connected" : "disconnected",
+  });
 });
+
+// Order matters: notFound must come after every router, errorHandler last of
+// all. Express recognises the error handler by its four-argument signature.
+app.use(notFound);
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
