@@ -16,6 +16,7 @@ import customParseFormat from "dayjs/plugin/customParseFormat.js";
 import { User } from "../models/User.js";
 import { Workouts } from "../models/Workouts.js";
 import { WorkoutsLog } from "../models/WorkoutsLog.js";
+import { assertSafeToSeed } from "./_guard.js";
 
 dayjs.extend(customParseFormat);
 
@@ -23,6 +24,7 @@ const DATE_FORMAT = "DD/MM/YY";
 const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
 const run = async () => {
+  assertSafeToSeed("seedWorkoutHistory.js");
   const email = process.env.SEED_USER_EMAIL;
   const weeks = parseInt(process.env.SEED_WEEKS || "12", 10);
   const skipRate = parseFloat(process.env.SEED_SKIP_RATE || "0.25");

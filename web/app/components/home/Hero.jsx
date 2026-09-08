@@ -7,8 +7,9 @@ import { useAuth } from "@/app/api/Authprovider/Authprovider";
 
 const Hero = () => {
   const { user } = useAuth();
-  const [preview, setPreview] = useState([]);
+    const [preview, setPreview] = useState([]);
   const [total, setTotal] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -19,7 +20,10 @@ const Hero = () => {
         setPreview(res.data?.items || []);
         setTotal(res.data?.total ?? null);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
     return () => {
       cancelled = true;
     };
@@ -97,27 +101,39 @@ const Hero = () => {
 
           {/* Real catalogue gifs rather than a stock photo — nothing to clash
               with the theme, and it shows the actual product. */}
-          <div className="hidden lg:flex justify-center items-center gap-4 h-[420px]">
-            {preview.map((exercise, index) => (
-              <div
-                key={exercise.id}
-                className="rounded-2xl overflow-hidden border border-border shadow-lg bg-white w-[190px]"
-                style={{
-                  transform: `translateY(${index === 1 ? "-28px" : "18px"}) rotate(${
-                    index === 0 ? "-4deg" : index === 2 ? "4deg" : "0deg"
-                  })`,
-                }}
-              >
-                <img
-                  src={exercise.gifUrl}
-                  alt={exercise.name}
-                  className="w-full aspect-square object-cover"
-                />
-                <p className="text-xs capitalize text-center py-2.5 text-[hsl(var(--card-foreground))] bg-card">
-                  {exercise.name}
-                </p>
-              </div>
-            ))}
+                    <div className="hidden lg:flex justify-center items-center gap-4 h-[420px]">
+            {/* Placeholders rather than nothing: an empty half of the hero on
+                a cold start reads as broken instead of loading. */}
+            {loading
+              ? [0, 1, 2].map((index) => (
+                  <div
+                    key={index}
+                    className="rounded-2xl border border-border bg-card animate-pulse w-[190px] h-[230px]"
+                    style={{
+                      transform: `translateY(${index === 1 ? "-28px" : "18px"})`,
+                    }}
+                  />
+                ))
+              : preview.map((exercise, index) => (
+                  <div
+                    key={exercise.id}
+                    className="rounded-2xl overflow-hidden border border-border shadow-lg bg-white w-[190px]"
+                    style={{
+                      transform: `translateY(${index === 1 ? "-28px" : "18px"}) rotate(${
+                        index === 0 ? "-4deg" : index === 2 ? "4deg" : "0deg"
+                      })`,
+                    }}
+                  >
+                    <img
+                      src={exercise.gifUrl}
+                      alt={exercise.name}
+                      className="w-full aspect-square object-cover"
+                    />
+                    <p className="text-xs capitalize text-center py-2.5 text-[hsl(var(--card-foreground))] bg-card">
+                      {exercise.name}
+                    </p>
+                  </div>
+                ))}
           </div>
         </div>
       </div>

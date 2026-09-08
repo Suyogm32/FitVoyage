@@ -105,7 +105,9 @@ problem differently.
 - **Dev seed scripts mutate real data**: `seedWorkoutHistory.js`,
   `seedBodyWeight.js`, `seedDeloadSignals.js`. They exist because effective
   dating and the future-date guard make history unreachable through the UI by
-  design. They have no production guard yet.
+  design. They have no production guard yet.  design. All three call assertSafeToSeed() from scripts/_guard.js as their
+  first statement — it refuses when MONGODB_URI isn't loopback. Override with
+  ALLOW_DESTRUCTIVE_SEED=yes only when you mean it.
 - **React Strict Mode double-invokes effects in dev.** Duplicate requests in the
   Network tab are expected locally and do not happen in a production build.
 
@@ -117,14 +119,24 @@ progressive overload engine, body weight tracking, exercise history and volume
 analytics, exercise substitution, stall detection, deload advisory, full UI
 overhaul with theming.
 
+**Deployed and live:**
+
+- Web: Vercel — <https://fit-voyage.vercel.app>. Vercel's **Root Directory must
+  be `web`**; the repo root has no Next app in it, and getting this wrong 404s
+  every route.
+- API: Render — <https://fitvoyage-api.onrender.com>. `ALLOWED_ORIGINS` must
+  include the Vercel origin with scheme and no trailing slash, or `cors()`
+  rejects everything.
+- Firebase **Authorized domains** must list the Vercel domain or Google
+  sign-in fails with `auth/unauthorized-domain`.
+- Render's free tier sleeps after ~15 min idle; first request then takes
+  30–50s.
+
 Not done, roughly in order:
 
-1. **Deployment.** Not deployed anywhere yet. The build — not the running app —
-   is what strains a free-tier instance, so the build belongs off-box. Also
-   needed: CORS origins for a real domain, error responses that stop returning
-   `error.message` to clients (several routes still do), a process manager and
-   reverse proxy.
-2. **React Native app.** The reason the API is a separate service. Will be the
+1. **React Native app.** The reason the API is a separate service. Will be the
    first real test of whether the API assumes a web client anywhere.
-3. Smaller: production guards on the seed scripts, tests for the substitution
-   route and the deload endpoint (the utils are covered, the routes aren't).
+2. Route-level tests for substitution and the deload endpoint — their utils are
+   covered, the routes aren't.
+3. Known and accepted: `program.js` returns `attempts` (provider error text) to
+   the client on a 502. Reviewed, left as-is.

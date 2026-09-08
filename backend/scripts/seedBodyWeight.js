@@ -20,6 +20,7 @@ import mongoose from "mongoose";
 import { User } from "../models/User.js";
 import { BodyWeight } from "../models/BodyWeight.js";
 import { parseDayInput, MIN_KG, MAX_KG } from "../utils/bodyWeight.js";
+import { assertSafeToSeed } from "./_guard.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -29,6 +30,10 @@ const noise = (spread) =>
   ((Math.random() + Math.random() + Math.random()) / 3 - 0.5) * 2 * spread;
 
 const run = async () => {
+  // First statement on purpose: this has to refuse before anything connects,
+  // reads or writes.
+  assertSafeToSeed("seedBodyWeight.js");
+
   const email = process.env.SEED_USER_EMAIL;
   const weeks = parseInt(process.env.SEED_WEEKS || "16", 10);
   const logRate = parseFloat(process.env.SEED_LOG_RATE || "0.6");

@@ -7,6 +7,7 @@ import FeatureStrip from "./home/FeatureStrip";
 import BodyPartGrid from "./home/BodyPartGrid";
 import Footer from "./Footer";
 import { useAuth } from "@/app/api/Authprovider/Authprovider";
+import ApiWakingBanner from "./ApiWakingBanner";
 
 const MyHome = () => {
   const { user } = useAuth();
@@ -16,6 +17,9 @@ const MyHome = () => {
       <PublicNavbar />
 
       <main className="flex-1">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 pt-6">
+          <ApiWakingBanner />
+        </div>
         <Hero />
         <FeatureStrip />
         <BodyPartGrid />

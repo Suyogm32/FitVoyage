@@ -15,11 +15,16 @@ import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat.js";
 import { User } from "../models/User.js";
 import { WorkoutsLog } from "../models/WorkoutsLog.js";
+import { assertSafeToSeed } from "./_guard.js";
 
 dayjs.extend(customParseFormat);
 const DATE_FORMAT = "DD/MM/YY";
 
 const run = async () => {
+  // First statement on purpose: this has to refuse before anything connects,
+  // reads or writes.
+  assertSafeToSeed("seedDeloadSignals.js");
+
   const email = process.env.SEED_USER_EMAIL;
   const beatUpCount = parseInt(process.env.SEED_BEAT_UP_SESSIONS || "3", 10);
   const stallCount = parseInt(process.env.SEED_STALL_EXERCISES || "2", 10);
