@@ -7,22 +7,17 @@ const TODAY = [
   { id: "3", name: "Cable Pushdown", sets: 3, reps: "15 / 12 / 12" },
 ];
 
-export default function HomeScreen() {
+export default function TodayScreen() {
   return (
-    // flex: 1 makes this fill the screen. Without it the view is only as
-    // tall as its content — there is no height: 100vh here.
     <SafeAreaView style={styles.screen}>
       <Text style={styles.heading}>Today</Text>
       <Text style={styles.subheading}>Chest and triceps</Text>
 
       <View style={styles.list}>
         {TODAY.map((exercise) => (
-          // The default direction is column, so this row has to opt in.
           <View key={exercise.id} style={styles.card}>
             <View style={styles.cardText}>
               <Text style={styles.name}>{exercise.name}</Text>
-              {/* Styles don't inherit — this Text needs its own colour even
-                  though its parent has one. */}
               <Text style={styles.meta}>
                 {exercise.sets} sets · {exercise.reps}
               </Text>
@@ -59,4 +54,5 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 999,
   },
+  
 });
